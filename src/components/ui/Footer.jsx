@@ -39,7 +39,7 @@ export default function Footer() {
         <div className="footer__brand">
           <span className="footer__logo">◆ OASIS</span>
           <p className="footer__brand-desc">
-            Cosmética botánica y maquillaje exclusivo.
+            Maquillaje de alta calidad y cosméticos en tendencia.
             Descubre nuestras fórmulas y crea tu pack personalizado con mensaje especial.
           </p>
         </div>

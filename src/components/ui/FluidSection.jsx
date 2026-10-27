@@ -145,7 +145,7 @@ export default function FluidSection() {
               <span className="fluid-pill__icon">💧</span>
               <div className="fluid-pill__text">
                 <strong>+48H</strong>
-                <p>Hidratación botánica</p>
+                <p>Hidratación profunda</p>
               </div>
             </div>
             <div className="fluid-pill glass">

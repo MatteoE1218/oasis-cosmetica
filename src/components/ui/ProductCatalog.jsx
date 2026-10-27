@@ -188,8 +188,8 @@ export default function ProductCatalog() {
             Fórmulas de <span className="text-gradient">Excelencia</span>
           </h2>
           <p className="section-subtitle">
-            Ingredientes botánicos puros, pigmentos de estudio y texturas diseñadas 
-            para sublimar cada rasgo con luz natural y confort inalterable.
+            Pigmentos de alta cobertura, tonos en tendencia y texturas diseñadas 
+            para brindarte un acabado profesional, radiante y cómodo todo el día.
           </p>
         </div>
 

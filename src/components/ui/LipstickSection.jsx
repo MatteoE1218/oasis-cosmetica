@@ -125,9 +125,9 @@ export default function LipstickSection() {
           </h2>
 
           <p className="lipstick-desc">
-            Formulado con extracto de aceite botánico de camelia y pigmentos puros 
-            micronizados de alta saturación. Su punta biselada se desliza con precisión 
-            de pasarela, vistiendo los labios con una película ultrafina de color imperecedero.
+            Formulado con aceites nutritivos y pigmentos puros de alta saturación. 
+            Su punta biselada se desliza con suavidad sobre los labios, vistiendo 
+            tu sonrisa con un color vibrante, aterciopelado y de larga duración.
           </p>
 
           {/* Feature Pills */}
@@ -142,8 +142,8 @@ export default function LipstickSection() {
             <div className="lipstick-pill glass">
               <span className="lipstick-pill__icon">🌸</span>
               <div className="lipstick-pill__text">
-                <strong>Camelia</strong>
-                <p>Nutrición botánica</p>
+                <strong>Nutrición</strong>
+                <p>Cuidado e hidratación</p>
               </div>
             </div>
             <div className="lipstick-pill glass">

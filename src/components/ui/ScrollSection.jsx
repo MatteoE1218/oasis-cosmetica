@@ -21,11 +21,11 @@ const features = [
       'Incluye una dedicatoria especial impresa en tarjeta artesanal para sorprender a quien más quieres.',
   },
   {
-    id: 'feature-botanical',
-    icon: '🌸',
-    title: 'Fórmulas Veganas & Puras',
+    id: 'feature-quality',
+    icon: '✨',
+    title: 'Fórmulas de Larga Duración',
     description:
-      'Maquillaje de alta duración con extractos botánicos que hidratan y respetan tu piel sin crueldad animal.',
+      'Maquillaje con pigmentación intensa y fijación que se mantiene impecable durante todo el día sin retoques.',
   },
   {
     id: 'feature-whatsapp',

@@ -85,7 +85,7 @@ export default function HeroSection() {
           trigger: heroRef.current,
           start: '20% top',
           end: 'bottom top',
-          scrub: 1,
+          scrub: true,
         },
       })
 
@@ -123,9 +123,9 @@ export default function HeroSection() {
 
         {/* Subtitle */}
         <p ref={subtitleRef} className="hero__subtitle">
-          Una experiencia de belleza creada con pasión botánica y fórmulas que cuidan tu piel. 
-          Descubre tonos vibrantes, larga duración y la opción de armar tus cajas de regalo 
-          personalizadas con una dedicatoria especial.
+          Maquillaje de alta calidad pensado para resaltar tu belleza cada día. 
+          Descubre tonos en tendencia, acabado impecable, larga duración y la opción 
+          de armar tus cajas de regalo personalizadas con una dedicatoria especial.
         </p>
 
         {/* Actions */}

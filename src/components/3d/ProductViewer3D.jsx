@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { PerspectiveCamera, ContactShadows, Environment } from '@react-three/drei'
+import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import StudioLighting from './StudioLighting'
 import './ProductViewer3D.css'
@@ -385,34 +385,19 @@ export default function ProductViewer3D({
           gl={{
             antialias: true,
             alpha: true,
-            powerPreference: 'high-performance',
-            toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.05,
+            powerPreference: 'default',
           }}
-          dpr={[1, 2]}
+          dpr={1}
           camera={{ position: [0, 0.4, 4.2], fov: 40 }}
         >
           <PerspectiveCamera makeDefault position={[0, 0.4, 4.2]} fov={40} />
           <StudioLighting />
 
           <Suspense fallback={null}>
-            <Environment preset="studio" environmentIntensity={0.85} />
-          </Suspense>
-
-          <Suspense fallback={null}>
             {type === 'lipstick' && <StaticLipstick color={color} />}
             {type === 'serum' && <StaticSerumBottle color={color} />}
             {type === 'compact' && <StaticCompact activeShadeIndex={activeShadeIndex} />}
           </Suspense>
-
-          <ContactShadows
-            position={[0, -1.6, 0]}
-            opacity={0.3}
-            scale={7.5}
-            blur={2.2}
-            far={3.5}
-            color="#8A7568"
-          />
         </Canvas>
       </div>
 
