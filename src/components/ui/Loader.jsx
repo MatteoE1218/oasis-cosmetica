@@ -47,19 +47,17 @@ export default function Loader({ onComplete }) {
         setTimeout(() => {
           gsap.to(loaderRef.current, {
             opacity: 0,
-            scale: 1.03,
-            filter: 'blur(8px)',
-            duration: 0.6,
-            ease: 'power2.inOut',
+            duration: 0.35,
+            ease: 'power2.out',
             onComplete: () => {
               setVisible(false)
               onComplete?.()
             },
           })
-        }, 180)
+        }, 120)
       }
       setProgress(Math.min(Math.round(current), 100))
-    }, 70)
+    }, 40)
 
     return () => {
       clearInterval(interval)
@@ -94,23 +92,6 @@ export default function Loader({ onComplete }) {
         </div>
 
         <span className="loader__percent">{Math.round(progress)}%</span>
-      </div>
-
-      {/* Ambient particles */}
-      <div className="loader__particles" aria-hidden="true">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="loader__particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 4}s`,
-              animationDuration: `${3 + Math.random() * 4}s`,
-              '--size': `${2 + Math.random() * 4}px`,
-            }}
-          />
-        ))}
       </div>
     </div>
   )
