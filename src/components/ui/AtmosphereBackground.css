@@ -1,0 +1,64 @@
+/* Atmosphere Background Styles — Luminous Light Edition */
+.atmosphere-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  --bg-base: #FDFBF7;
+  --orb-1-color: rgba(235, 215, 195, 0.35);
+  --orb-2-color: rgba(245, 230, 215, 0.40);
+  --orb-3-color: rgba(230, 205, 195, 0.25);
+  transition: --bg-base 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.atmosphere-bg__base {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg-base);
+  transition: background-color 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.atmosphere-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform, background;
+  transition: background 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.atmosphere-orb--1 {
+  width: 70vw;
+  height: 70vw;
+  max-width: 900px;
+  max-height: 900px;
+  top: -15%;
+  right: -10%;
+  background: radial-gradient(circle, var(--orb-1-color) 0%, transparent 70%);
+}
+
+.atmosphere-orb--2 {
+  width: 65vw;
+  height: 65vw;
+  max-width: 850px;
+  max-height: 850px;
+  top: 35%;
+  left: -15%;
+  background: radial-gradient(circle, var(--orb-2-color) 0%, transparent 70%);
+}
+
+.atmosphere-orb--3 {
+  width: 75vw;
+  height: 75vw;
+  max-width: 950px;
+  max-height: 950px;
+  bottom: -20%;
+  right: 15%;
+  background: radial-gradient(circle, var(--orb-3-color) 0%, transparent 70%);
+}
+
+.atmosphere-bg__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 60%, rgba(240, 230, 220, 0.3) 100%);
+}
