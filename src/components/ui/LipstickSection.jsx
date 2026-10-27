@@ -116,7 +116,7 @@ export default function LipstickSection() {
         <div ref={contentRef} className="lipstick-content">
           <div className="lipstick-tag">
             <span className="lipstick-tag__dot" />
-            <span>Colección Alta Costura • Satén Terciopelo</span>
+            <span>Colección Exclusiva • Satén Terciopelo</span>
           </div>
 
           <h2 className="lipstick-title">
@@ -178,7 +178,7 @@ export default function LipstickSection() {
                 </button>
               ))}
             </div>
-            <span className="lipstick-shades__hint">✦ El modelo 3D adopta el tono seleccionado en tiempo real</span>
+            <span className="lipstick-shades__hint">✦ El acabado adopta el tono seleccionado en tiempo real</span>
           </div>
 
           {/* Actions */}
@@ -202,7 +202,7 @@ export default function LipstickSection() {
           <ProductViewer3D
             type="lipstick"
             color={active.hex}
-            badgeText="Labial Eterno • Estudio 3D"
+            badgeText="Labial Eterno • Vista en Vivo"
           />
         </div>
       </div>

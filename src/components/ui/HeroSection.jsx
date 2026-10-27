@@ -110,7 +110,7 @@ export default function HeroSection() {
         {/* Couture Badge */}
         <div ref={badgeRef} className="hero__badge">
           <span className="hero__badge-pulse" />
-          <span className="hero__badge-text">Colección de Alta Cosmética 2026</span>
+          <span className="hero__badge-text">Maquillaje Exclusivo & Packs Personalizados</span>
         </div>
 
         {/* Hero Title */}
@@ -123,9 +123,9 @@ export default function HeroSection() {
 
         {/* Subtitle */}
         <p ref={subtitleRef} className="hero__subtitle">
-          Una experiencia sensorial tridimensional donde el diseño de alta costura 
-          se encuentra con la biotecnología botánica. Descubre cada fórmula 
-          con renderizado físico de precisión.
+          Una experiencia de belleza creada con pasión botánica y fórmulas que cuidan tu piel. 
+          Descubre tonos vibrantes, larga duración y la opción de armar tus cajas de regalo 
+          personalizadas con una dedicatoria especial.
         </p>
 
         {/* Actions */}
@@ -137,8 +137,8 @@ export default function HeroSection() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          <a href="#catalogo" className="btn btn-outline" id="hero-cta-catalog">
-            Ver Catálogo
+          <a href="#packs" className="btn btn-outline" id="hero-cta-packs">
+            🎁 Armar Pack de Regalo
           </a>
         </div>
 

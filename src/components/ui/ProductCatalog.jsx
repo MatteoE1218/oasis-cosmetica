@@ -183,7 +183,7 @@ export default function ProductCatalog() {
     <section ref={sectionRef} className="catalog section" id="catalogo">
       <div className="container">
         <div className="section-header">
-          <p className="catalog__label">Colección de Alta Costura</p>
+          <p className="catalog__label">Colección de Maquillaje Exclusivo</p>
           <h2 className="catalog__title section-title">
             Fórmulas de <span className="text-gradient">Excelencia</span>
           </h2>

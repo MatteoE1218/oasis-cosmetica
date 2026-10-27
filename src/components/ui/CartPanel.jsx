@@ -114,6 +114,11 @@ export default function CartPanel() {
                 <div className="cart-item__info">
                   <p className="cart-item__name">{item.name}</p>
                   <p className="cart-item__shade">{item.shade}</p>
+                  {item.customMessage && (
+                    <p className="cart-item__custom-msg" style={{ fontSize: '0.72rem', fontStyle: 'italic', color: 'var(--color-accent-primary)', marginTop: '0.2rem' }}>
+                      💌 “{item.customMessage}”
+                    </p>
+                  )}
                 </div>
                 <div className="cart-item__controls">
                   <button

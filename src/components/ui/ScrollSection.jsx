@@ -7,32 +7,32 @@ gsap.registerPlugin(ScrollTrigger)
 
 const features = [
   {
-    id: 'feature-3d-view',
-    icon: '💎',
-    title: 'Vista 3D Interactiva',
+    id: 'feature-packs',
+    icon: '🎁',
+    title: 'Cajas & Packs de Regalo',
     description:
-      'Gira, amplía y explora cada producto desde cualquier ángulo antes de comprar.',
+      'Elige tus cosméticos favoritos y crea un pack único con caja de lujo y lazo de satén.',
   },
   {
-    id: 'feature-ar-try',
-    icon: '✨',
-    title: 'Prueba Virtual AR',
+    id: 'feature-message',
+    icon: '💌',
+    title: 'Mensaje Personalizado',
     description:
-      'Usa realidad aumentada para probarte los productos directamente desde tu dispositivo.',
+      'Incluye una dedicatoria especial impresa en tarjeta artesanal para sorprender a quien más quieres.',
   },
   {
-    id: 'feature-textures',
-    icon: '🎨',
-    title: 'Texturas Realistas',
+    id: 'feature-botanical',
+    icon: '🌸',
+    title: 'Fórmulas Veganas & Puras',
     description:
-      'Visualiza acabados mate, satinados y brillantes con iluminación físicamente precisa.',
+      'Maquillaje de alta duración con extractos botánicos que hidratan y respetan tu piel sin crueldad animal.',
   },
   {
-    id: 'feature-palette',
-    icon: '💄',
-    title: 'Paletas Personalizadas',
+    id: 'feature-whatsapp',
+    icon: '💬',
+    title: 'Atención por WhatsApp',
     description:
-      'Crea tu propia combinación de colores y visualízala en tiempo real en 3D.',
+      '¿Dudas con tu tono ideal? Escríbenos y te asesoramos de forma personalizada para tu pedido.',
   },
 ]
 
@@ -78,11 +78,11 @@ export default function ScrollSection() {
       <div className="container">
         <div className="section-header">
           <h2 className="section-title">
-            Una experiencia <span className="text-gradient">sin precedentes</span>
+            Creado para <span className="text-gradient">sorprender y cuidar</span>
           </h2>
           <p className="section-subtitle">
-            Tecnología 3D de última generación aplicada a la industria de la
-            belleza para una experiencia de compra completamente nueva.
+            Un emprendimiento de maquillaje donde cada producto y detalle de empaque se prepara 
+            con dedicación, listo para consentirte o hacer el regalo ideal.
           </p>
         </div>
 

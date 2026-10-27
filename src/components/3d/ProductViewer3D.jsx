@@ -369,7 +369,7 @@ export default function ProductViewer3D({
   type = 'lipstick',
   color = '#C52844',
   activeShadeIndex = 0,
-  badgeText = 'Vista 3D Interactiva',
+  badgeText = 'Vista del Producto',
 }) {
   return (
     <div className="product-viewer-3d glass">
@@ -421,7 +421,7 @@ export default function ProductViewer3D({
 
       {/* Chic Caption */}
       <div className="product-viewer-3d__caption">
-        <span>OASIS • Estudio 3D de Alta Fidelidad</span>
+        <span>OASIS • Cosmética de Alta Fidelidad</span>
       </div>
     </div>
   )

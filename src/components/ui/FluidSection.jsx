@@ -117,7 +117,7 @@ export default function FluidSection() {
           <ProductViewer3D
             type="serum"
             color={active.hex}
-            badgeText="Sérum Resplandor • Cristal 3D"
+            badgeText="Sérum Resplandor • Vista en Vivo"
           />
         </div>
 
@@ -187,7 +187,7 @@ export default function FluidSection() {
                 </button>
               ))}
             </div>
-            <span className="fluid-shades__hint">✦ El fluido dentro del frasco 3D se transforma en vivo</span>
+            <span className="fluid-shades__hint">✦ El tono del producto se transforma al instante</span>
           </div>
 
           {/* Actions */}

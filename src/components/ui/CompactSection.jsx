@@ -177,7 +177,7 @@ export default function CompactSection() {
                 </button>
               ))}
             </div>
-            <span className="compact-shades__hint">✦ Estuche joya con espejo interior exhibido en 3D</span>
+            <span className="compact-shades__hint">✦ Estuche joya con espejo interior y 4 tonos combinables</span>
           </div>
 
           {/* Actions */}
@@ -201,7 +201,7 @@ export default function CompactSection() {
           <ProductViewer3D
             type="compact"
             activeShadeIndex={selectedShade}
-            badgeText="Polvo Resplandor • Estuche Joya 3D"
+            badgeText="Polvo Resplandor • Estuche Joya"
           />
         </div>
       </div>

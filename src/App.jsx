@@ -8,10 +8,12 @@ import FluidSection from './components/ui/FluidSection'
 import CompactSection from './components/ui/CompactSection'
 import TextureShowcase from './components/ui/TextureShowcase'
 import ProductCatalog from './components/ui/ProductCatalog'
+import CustomBoxSection from './components/ui/CustomBoxSection'
 import ScrollSection from './components/ui/ScrollSection'
 import Footer from './components/ui/Footer'
 import CartPanel from './components/ui/CartPanel'
 import Loader from './components/ui/Loader'
+import WhatsAppButton from './components/ui/WhatsAppButton'
 import './App.css'
 
 /**
@@ -56,10 +58,13 @@ export default function App() {
             {/* Galería interactiva de texturas & morphing swatches */}
             <TextureShowcase />
 
-            {/* Catálogo completo con tarjetas 3D tilt */}
+            {/* Catálogo completo con tarjetas de productos */}
             <ProductCatalog />
 
-            {/* Innovación y experiencia */}
+            {/* Nueva sección: Arma tu Pack o Caja de Regalo Personalizada */}
+            <CustomBoxSection />
+
+            {/* Calidad, garantía y atención */}
             <ScrollSection />
           </main>
 
@@ -68,6 +73,9 @@ export default function App() {
 
           {/* Drawer de carrito */}
           <CartPanel />
+
+          {/* Botón flotante de WhatsApp para atención y pedidos */}
+          <WhatsAppButton />
         </div>
       </div>
     </CartProvider>

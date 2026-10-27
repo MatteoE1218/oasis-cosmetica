@@ -7,7 +7,7 @@ const navLinks = [
   { href: '#lipstick', id: 'lipstick', label: 'Labiales' },
   { href: '#base-fluida', id: 'base-fluida', label: 'Base Líquida' },
   { href: '#compacto', id: 'compacto', label: 'Polvos' },
-  { href: '#colecciones', id: 'colecciones', label: 'Texturas' },
+  { href: '#packs', id: 'packs', label: 'Arma tu Pack' },
   { href: '#catalogo', id: 'catalogo', label: 'Catálogo' },
 ]
 
@@ -23,7 +23,7 @@ export default function Navbar() {
       setScrolled(window.scrollY > 40)
 
       // Active section calculation
-      const sections = ['hero', 'lipstick', 'base-fluida', 'compacto', 'colecciones', 'catalogo']
+      const sections = ['hero', 'lipstick', 'base-fluida', 'compacto', 'packs', 'catalogo']
       const scrollPos = window.scrollY + 200
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -49,7 +49,7 @@ export default function Navbar() {
     >
       <div className="container navbar__inner">
         {/* Logo */}
-        <a href="#hero" className="navbar__logo" id="logo-link" aria-label="Oasis 3D - Inicio">
+        <a href="#hero" className="navbar__logo" id="logo-link" aria-label="Oasis Cosmética - Inicio">
           <span className="navbar__logo-diamond" aria-hidden="true">◆</span>
           <span className="navbar__logo-text">
             <span className="navbar__logo-oasis">OASIS</span>

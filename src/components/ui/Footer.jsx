@@ -39,8 +39,8 @@ export default function Footer() {
         <div className="footer__brand">
           <span className="footer__logo">◆ OASIS</span>
           <p className="footer__brand-desc">
-            Alta cosmética sensorial con experiencia 3D editorial.
-            Redefiniendo la belleza y la pureza botánica.
+            Cosmética botánica y maquillaje exclusivo.
+            Descubre nuestras fórmulas y crea tu pack personalizado con mensaje especial.
           </p>
         </div>
 
@@ -49,9 +49,9 @@ export default function Footer() {
           <h3 className="footer__heading">Tienda</h3>
           <ul className="footer__links">
             <li><a href="#catalogo" className="footer__link">Catálogo</a></li>
-            <li><a href="#colecciones" className="footer__link">Colecciones</a></li>
-            <li><a href="#" className="footer__link">Nuevos Lanzamientos</a></li>
-            <li><a href="#" className="footer__link">Los Más Vendidos</a></li>
+            <li><a href="#packs" className="footer__link">Packs de Regalo</a></li>
+            <li><a href="#lipstick" className="footer__link">Labiales</a></li>
+            <li><a href="#base-fluida" className="footer__link">Base & Sérum</a></li>
           </ul>
         </div>
 
@@ -61,7 +61,7 @@ export default function Footer() {
             <li><a href="#" className="footer__link">Sobre Nosotros</a></li>
             <li><a href="#" className="footer__link">Ingredientes</a></li>
             <li><a href="#" className="footer__link">Sostenibilidad</a></li>
-            <li><a href="#" className="footer__link">Contacto</a></li>
+            <li><a href="#btn-whatsapp" className="footer__link">Contacto WhatsApp</a></li>
           </ul>
         </div>
 
@@ -89,9 +89,9 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
-          <p>© 2026 Oasis — Alta Cosmética. Todos los derechos reservados.</p>
+          <p>© 2026 Oasis Cosmética. Todos los derechos reservados.</p>
           <p className="footer__tech">
-            Creado con <span aria-label="amor">♥</span>, Three.js y GSAP
+            Creado con <span aria-label="amor">♥</span> para Oasis Cosmética
           </p>
         </div>
       </div>
