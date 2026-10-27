@@ -182,7 +182,7 @@ export default function CustomBoxSection() {
                     />
                     <div className="custom-box__option-info">
                       <strong>{box.name}</strong>
-                      <span>+€{box.extraPrice.toFixed(2)}</span>
+                      <span>+${box.extraPrice.toFixed(2)}</span>
                     </div>
                   </button>
                 ))}
@@ -215,7 +215,7 @@ export default function CustomBoxSection() {
                       />
                       <span className="custom-box__item-icon">{item.icon}</span>
                       <span className="custom-box__item-name">{item.name}</span>
-                      <span className="custom-box__item-price">€{item.price.toFixed(2)}</span>
+                      <span className="custom-box__item-price">${item.price.toFixed(2)}</span>
                     </label>
                   )
                 })}
@@ -308,14 +308,14 @@ export default function CustomBoxSection() {
               <ul className="custom-box__summary-list">
                 <li>
                   <span>Empaque de regalo</span>
-                  <span>€{selectedBox.extraPrice.toFixed(2)}</span>
+                  <span>${selectedBox.extraPrice.toFixed(2)}</span>
                 </li>
                 {selectedProducts.map((id) => {
                   const p = selectableItems.find((item) => item.id === id)
                   return (
                     <li key={id}>
                       <span>{p?.name}</span>
-                      <span>€{p?.price.toFixed(2)}</span>
+                      <span>${p?.price.toFixed(2)}</span>
                     </li>
                   )
                 })}
@@ -327,7 +327,7 @@ export default function CustomBoxSection() {
 
               <div className="custom-box__summary-total">
                 <span>Precio Total</span>
-                <span className="custom-box__total-amount">€{calculateTotal().toFixed(2)}</span>
+                <span className="custom-box__total-amount">${calculateTotal().toFixed(2)}</span>
               </div>
 
               <button

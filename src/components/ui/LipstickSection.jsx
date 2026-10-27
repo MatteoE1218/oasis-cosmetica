@@ -189,7 +189,7 @@ export default function LipstickSection() {
               id="lipstick-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="lipstick-btn-price">• €42.00</span>
+              <span className="lipstick-btn-price">• $42.00</span>
             </button>
             <a href="#base-fluida" className="btn btn-outline">
               Siguiente: Sérum Resplandor

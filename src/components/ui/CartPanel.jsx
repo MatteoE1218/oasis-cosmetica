@@ -152,7 +152,7 @@ export default function CartPanel() {
                   </button>
                 </div>
                 <span className="cart-item__price">
-                  €{(item.price * item.qty).toFixed(2)}
+                  ${(item.price * item.qty).toFixed(2)}
                 </span>
               </div>
             ))
@@ -165,7 +165,7 @@ export default function CartPanel() {
             <div className="cart-panel__total">
               <span>Total</span>
               <span className="cart-panel__total-price">
-                €{cart.totalPrice.toFixed(2)}
+                ${cart.totalPrice.toFixed(2)}
               </span>
             </div>
             <button className="btn btn-primary cart-panel__checkout" id="checkout-btn">

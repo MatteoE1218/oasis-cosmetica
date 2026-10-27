@@ -198,7 +198,7 @@ export default function FluidSection() {
               id="fluid-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="fluid-btn-price">• €56.00</span>
+              <span className="fluid-btn-price">• $56.00</span>
             </button>
             <a href="#compacto" className="btn btn-outline">
               Siguiente: Polvo Resplandor

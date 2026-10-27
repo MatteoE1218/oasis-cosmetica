@@ -188,7 +188,7 @@ export default function CompactSection() {
               id="compact-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="compact-btn-price">• €68.00</span>
+              <span className="compact-btn-price">• $68.00</span>
             </button>
             <a href="#colecciones" className="btn btn-outline">
               Siguiente: Galería de Texturas

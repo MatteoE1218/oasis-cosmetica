@@ -89,7 +89,7 @@ function ProductCard({ product }) {
         <div className="product-card__footer">
           <div className="product-card__price-box">
             <span className="product-card__price-label">Precio</span>
-            <span className="product-card__price">€{product.price.toFixed(2)}</span>
+            <span className="product-card__price">${product.price.toFixed(2)}</span>
           </div>
 
           <button
