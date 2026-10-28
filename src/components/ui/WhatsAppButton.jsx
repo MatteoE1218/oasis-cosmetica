@@ -1,13 +1,19 @@
 import { useState } from 'react'
+import { useCart } from '../../stores/CartContext'
 import './WhatsAppButton.css'
 
 /**
  * Floating WhatsApp Button
  * Conectado al número oficial de Oasis Makeup: +593 998346794
+ * Se oculta automáticamente cuando el carrito está abierto para no superponerse con el checkout.
  */
 export default function WhatsAppButton() {
   const [showTooltip, setShowTooltip] = useState(false)
-  const whatsappUrl = 'https://wa.me/593998346794?text=' + encodeURIComponent('¡Hola Oasis Makeup! 👋 Deseo más información y asesoría sobre sus cosméticos.')
+  const cart = useCart()
+  const whatsappUrl = 'https://api.whatsapp.com/send?phone=593998346794&text=' + encodeURIComponent('¡Hola Oasis Makeup! 👋 Deseo más información y asesoría sobre sus cosméticos.')
+
+  // Si el carrito lateral está abierto, no mostrar el botón flotante para no tapar el botón de compra
+  if (cart?.isOpen) return null
 
   return (
     <div 

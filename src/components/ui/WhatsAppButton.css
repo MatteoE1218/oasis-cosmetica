@@ -3,7 +3,7 @@
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 1500;
+  z-index: 900; /* Por debajo del carrito (z-modal: 1000) */
   display: flex;
   flex-direction: column;
   align-items: flex-end;

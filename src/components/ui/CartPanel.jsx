@@ -72,76 +72,133 @@ export default function CartPanel() {
       year: 'numeric',
     })
 
+    // Detectar si el usuario viene desde un dispositivo móvil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
     let lines = []
 
-    lines.push(`✨ *OASIS MAKEUP • NUEVA ORDEN* ✨`)
-    lines.push(`_Boutique de Alta Cosmética_`)
-    lines.push(`----------------------------------------`)
-    lines.push(`📋 *Pedido:* #${orderCode}`)
-    lines.push(`📅 *Fecha:* ${fecha}`)
-    lines.push(`----------------------------------------`)
-    lines.push(``)
-    lines.push(`💄 *PRODUCTOS SELECCIONADOS:*`)
-    lines.push(``)
-
-    cart.items.forEach((item, index) => {
-      const isPack = item.isPack || item.name.includes('Pack')
-      const itemIcon = isPack ? '🎁' : '💄'
-
-      lines.push(`${itemIcon} *${index + 1}. ${item.name}*`)
-
-      if (isPack) {
-        if (item.recipient) {
-          lines.push(`   • *Para:* ${item.recipient}`)
-        }
-        if (item.sender) {
-          lines.push(`   • *De parte de:* ${item.sender}`)
-        }
-        if (item.itemsIncluded) {
-          lines.push(`   • *Cosméticos incluidos:* ${item.itemsIncluded}`)
-        }
-        if (item.customMessage) {
-          lines.push(`   • 💌 *Tarjeta con dedicatoria:*`)
-          lines.push(`     _“${item.customMessage}”_`)
-        }
-      } else {
-        if (item.shade) {
-          lines.push(`   • *Tono / Matiz:* ${item.shade}`)
-        }
-        if (item.customMessage) {
-          lines.push(`   • 💌 *Dedicatoria:* _“${item.customMessage}”_`)
-        }
-      }
-
-      lines.push(`   • *Cantidad:* ${item.qty} ${item.qty > 1 ? 'unidades' : 'unidad'}`)
-      lines.push(`   • *Subtotal:* $${(item.price * item.qty).toFixed(2)}`)
+    if (isMobile) {
+      // ── FORMATO PARA CELULAR (Rico en emojis vibrantes) ──
+      lines.push(`✨ *OASIS MAKEUP • NUEVA ORDEN* ✨`)
+      lines.push(`_Boutique de Alta Cosmética_`)
+      lines.push(`----------------------------------------`)
+      lines.push(`📋 *Pedido:* #${orderCode}`)
+      lines.push(`📅 *Fecha:* ${fecha}`)
+      lines.push(`----------------------------------------`)
       lines.push(``)
-    })
+      lines.push(`💄 *PRODUCTOS SELECCIONADOS:*`)
+      lines.push(``)
 
-    lines.push(`----------------------------------------`)
-    lines.push(`📊 *RESUMEN DE COMPRA:*`)
-    lines.push(`• *Total de artículos:* ${cart.totalItems}`)
-    lines.push(`• *TOTAL A PAGAR:* *$${cart.totalPrice.toFixed(2)}*`)
-    lines.push(`----------------------------------------`)
-    lines.push(``)
-    lines.push(`📍 *DATOS PARA EL ENVÍO & PAGO:*`)
-    lines.push(`• *Nombre de quien recibe:* `)
-    lines.push(`• *Ciudad / Dirección:* `)
-    lines.push(`• *Método de pago preferido:* (Transferencia / Depósito / Efectivo)`)
+      cart.items.forEach((item, index) => {
+        const isPack = item.isPack || item.name.includes('Pack')
+        const itemIcon = isPack ? '🎁' : '💄'
+
+        lines.push(`${itemIcon} *${index + 1}. ${item.name}*`)
+
+        if (isPack) {
+          if (item.recipient) {
+            lines.push(`   • *Para:* ${item.recipient}`)
+          }
+          if (item.sender) {
+            lines.push(`   • *De parte de:* ${item.sender}`)
+          }
+          if (item.itemsIncluded) {
+            lines.push(`   • *Cosméticos incluidos:* ${item.itemsIncluded}`)
+          }
+          if (item.customMessage) {
+            lines.push(`   • 💌 *Tarjeta con dedicatoria:*`)
+            lines.push(`     _“${item.customMessage}”_`)
+          }
+        } else {
+          if (item.shade) {
+            lines.push(`   • *Tono / Matiz:* ${item.shade}`)
+          }
+          if (item.customMessage) {
+            lines.push(`   • 💌 *Dedicatoria:* _“${item.customMessage}”_`)
+          }
+        }
+
+        lines.push(`   • *Cantidad:* ${item.qty} ${item.qty > 1 ? 'unidades' : 'unidad'}`)
+        lines.push(`   • *Subtotal:* $${(item.price * item.qty).toFixed(2)}`)
+        lines.push(``)
+      })
+
+      lines.push(`----------------------------------------`)
+      lines.push(`📊 *RESUMEN DE COMPRA:*`)
+      lines.push(`• *Total de artículos:* ${cart.totalItems}`)
+      lines.push(`• *TOTAL A PAGAR:* *$${cart.totalPrice.toFixed(2)}*`)
+      lines.push(`----------------------------------------`)
+      lines.push(``)
+      lines.push(`📍 *DATOS PARA EL ENVÍO & PAGO:*`)
+      lines.push(`• *Nombre de quien recibe:* `)
+      lines.push(`• *Ciudad / Dirección:* `)
+      lines.push(`• *Método de pago preferido:* (Transferencia / Depósito / Efectivo)`)
+    } else {
+      // ── FORMATO PARA COMPUTADORA / WINDOWS ──
+      // Optimizado tipográficamente para que la app de WhatsApp para Windows se lea 100% limpia sin signos de interrogación
+      lines.push(`*OASIS MAKEUP • ORDEN DE COMPRA*`)
+      lines.push(`_Boutique de Cosmética & Belleza_`)
+      lines.push(`----------------------------------------`)
+      lines.push(`*Pedido:* #${orderCode}`)
+      lines.push(`*Fecha:* ${fecha}`)
+      lines.push(`----------------------------------------`)
+      lines.push(``)
+      lines.push(`*DETALLE DE PRODUCTOS:*`)
+      lines.push(``)
+
+      cart.items.forEach((item, index) => {
+        const isPack = item.isPack || item.name.includes('Pack')
+
+        lines.push(`*${index + 1}. ${item.name}*`)
+
+        if (isPack) {
+          if (item.recipient) {
+            lines.push(`   • *Para:* ${item.recipient}`)
+          }
+          if (item.sender) {
+            lines.push(`   • *De parte de:* ${item.sender}`)
+          }
+          if (item.itemsIncluded) {
+            lines.push(`   • *Cosméticos incluidos:* ${item.itemsIncluded}`)
+          }
+          if (item.customMessage) {
+            lines.push(`   • *Tarjeta con dedicatoria:*`)
+            lines.push(`     > "${item.customMessage}"`)
+          }
+        } else {
+          if (item.shade) {
+            lines.push(`   • *Tono / Matiz:* ${item.shade}`)
+          }
+          if (item.customMessage) {
+            lines.push(`   • *Dedicatoria:* > "${item.customMessage}"`)
+          }
+        }
+
+        lines.push(`   • *Cantidad:* ${item.qty} ${item.qty > 1 ? 'unidades' : 'unidad'}`)
+        lines.push(`   • *Subtotal:* $${(item.price * item.qty).toFixed(2)}`)
+        lines.push(``)
+      })
+
+      lines.push(`----------------------------------------`)
+      lines.push(`*RESUMEN DE COMPRA:*`)
+      lines.push(`• *Total de artículos:* ${cart.totalItems}`)
+      lines.push(`• *TOTAL A PAGAR:* *$${cart.totalPrice.toFixed(2)}*`)
+      lines.push(`----------------------------------------`)
+      lines.push(``)
+      lines.push(`*DATOS PARA EL ENVÍO & PAGO:*`)
+      lines.push(`• *Nombre de quien recibe:* `)
+      lines.push(`• *Ciudad / Dirección:* `)
+      lines.push(`• *Método de pago preferido:* (Transferencia / Depósito / Efectivo)`)
+    }
+
     lines.push(``)
     lines.push(`_¡Hola Oasis Makeup! Deseo coordinar el pago y envío de mi pedido. ¿Me confirman disponibilidad y los datos para realizar la transferencia? ¡Muchas gracias!_`)
 
     const message = lines.join('\n')
     const encoded = encodeURIComponent(message)
 
-    // Detección automática de dispositivo:
-    // En móviles abre la app nativa de WhatsApp.
-    // En PC / Mac abre WhatsApp Web para que el navegador renderice los emojis en UTF-8 perfecto sin el bug del protocolo de Windows.
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    const url = isMobile
-      ? `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encoded}`
-      : `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encoded}`
-
+    // Abre directamente la aplicación de WhatsApp que el usuario ya tenga en su dispositivo
+    const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encoded}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
