@@ -1,6 +1,6 @@
 .footer {
-  background: rgba(253, 251, 247, 0.96);
-  border-top: 1px solid var(--color-border);
+  background: #FFFFFF;
+  border-top: 1px solid rgba(247, 37, 133, 0.12);
   position: relative;
 }
 
@@ -12,14 +12,27 @@
 }
 
 /* Brand */
+.footer__logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.footer__logo-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(247, 37, 133, 0.3));
+}
+
 .footer__logo {
   font-family: var(--font-display);
   font-size: var(--text-base);
-  font-weight: 700;
-  letter-spacing: 0.25em;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   color: var(--color-text-primary);
-  display: block;
-  margin-bottom: var(--space-md);
+  display: inline-block;
 }
 
 .footer__brand-desc {
@@ -88,22 +101,24 @@
 }
 
 .footer__input:focus {
-  border-color: var(--color-text-primary);
+  border-color: var(--color-accent-primary);
 }
 
 .footer__submit {
   padding: var(--space-sm) var(--space-md);
   font-size: var(--text-base);
   color: #FFFFFF;
-  background: var(--color-text-primary);
+  background: var(--gradient-oasis);
   border: none;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(247, 37, 133, 0.3);
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
 .footer__submit:hover {
-  background: #332E30;
+  background: var(--gradient-oasis-hover);
+  transform: translateX(2px);
 }
 
 /* Bottom bar */

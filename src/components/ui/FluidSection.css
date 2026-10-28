@@ -38,9 +38,9 @@
   gap: var(--space-sm);
   padding: 0.4rem 1.15rem;
   border-radius: var(--radius-full);
-  background: rgba(197, 160, 89, 0.12);
-  border: 1px solid rgba(197, 160, 89, 0.28);
-  color: #8C6A28;
+  background: rgba(247, 37, 133, 0.08);
+  border: 1px solid rgba(247, 37, 133, 0.22);
+  color: var(--color-accent-primary);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -52,8 +52,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-accent-gold);
-  box-shadow: 0 0 8px rgba(197, 160, 89, 0.6);
+  background: var(--color-accent-primary);
+  box-shadow: 0 0 8px rgba(247, 37, 133, 0.6);
 }
 
 .fluid-title {
@@ -178,8 +178,8 @@
 
 .fluid-shade-btn--active {
   transform: scale(1.28);
-  border-color: #1A1A1A;
-  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.35), 0 6px 14px rgba(0, 0, 0, 0.18);
+  border-color: var(--color-accent-primary);
+  box-shadow: 0 0 0 3px rgba(247, 37, 133, 0.35), 0 6px 14px rgba(247, 37, 133, 0.22);
 }
 
 .fluid-shade-btn__glow {
@@ -198,9 +198,9 @@
 
 .fluid-shades__hint {
   font-size: 0.72rem;
-  color: var(--color-accent-gold);
+  color: var(--color-accent-primary);
   letter-spacing: 0.03em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .fluid-actions {

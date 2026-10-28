@@ -40,16 +40,17 @@
 }
 
 .showcase__tab:hover {
-  border-color: var(--color-border-hover);
-  color: var(--color-text-primary);
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
   background: #FFFFFF;
 }
 
 .showcase__tab--active {
-  border-color: var(--color-text-primary);
-  color: var(--color-text-primary);
+  border-color: var(--color-accent-primary);
+  color: var(--color-accent-primary);
   background: #FFFFFF;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 15px rgba(247, 37, 133, 0.18);
+  font-weight: 700;
 }
 
 .showcase__tab-dot {

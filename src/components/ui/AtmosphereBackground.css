@@ -5,10 +5,10 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  --bg-base: #FDFBF7;
-  --orb-1-color: rgba(235, 215, 195, 0.35);
-  --orb-2-color: rgba(245, 230, 215, 0.40);
-  --orb-3-color: rgba(230, 205, 195, 0.25);
+  --bg-base: #FFFFFF;
+  --orb-1-color: rgba(255, 227, 236, 0.55); /* #FFE3EC soft blush */
+  --orb-2-color: rgba(255, 240, 245, 0.65); /* #FFF0F5 rosa pastel suave */
+  --orb-3-color: rgba(255, 182, 193, 0.28); /* #FFB6C1 destello rosa claro */
   transition: --bg-base 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -60,5 +60,5 @@
 .atmosphere-bg__vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, transparent 60%, rgba(240, 230, 220, 0.3) 100%);
+  background: radial-gradient(circle at center, transparent 65%, rgba(255, 227, 236, 0.22) 100%);
 }

@@ -17,15 +17,15 @@
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(26, 26, 26, 0.07);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(247, 37, 133, 0.12);
+  box-shadow: 0 8px 30px rgba(247, 37, 133, 0.05);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
 .feature-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(197, 160, 89, 0.35);
-  box-shadow: 0 16px 40px rgba(197, 160, 89, 0.1), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border-color: rgba(247, 37, 133, 0.38);
+  box-shadow: 0 16px 40px rgba(247, 37, 133, 0.14), 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .feature-card__icon {

@@ -38,13 +38,13 @@ export default function AtmosphereBackground() {
           if (currentZone !== lastZone && bgRef.current) {
             lastZone = currentZone
             if (currentZone === 0) {
-              bgRef.current.style.setProperty('--bg-base', '#FDFBF7')
+              bgRef.current.style.setProperty('--bg-base', '#FFFFFF')
             } else if (currentZone === 1) {
-              bgRef.current.style.setProperty('--bg-base', '#F8EAE8')
+              bgRef.current.style.setProperty('--bg-base', '#FFFDFD')
             } else if (currentZone === 2) {
-              bgRef.current.style.setProperty('--bg-base', '#F5EFEB')
+              bgRef.current.style.setProperty('--bg-base', '#FFF0F5')
             } else {
-              bgRef.current.style.setProperty('--bg-base', '#F9F6F0')
+              bgRef.current.style.setProperty('--bg-base', '#FAFAFA')
             }
           }
         },

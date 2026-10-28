@@ -48,12 +48,12 @@ export default function Navbar() {
       aria-label="Navegación principal"
     >
       <div className="container navbar__inner">
-        {/* Logo */}
-        <a href="#hero" className="navbar__logo" id="logo-link" aria-label="Oasis Cosmética - Inicio">
-          <span className="navbar__logo-diamond" aria-hidden="true">◆</span>
+        {/* Logo con icono insignia */}
+        <a href="#hero" className="navbar__logo" id="logo-link" aria-label="Oasis Makeup - Inicio">
+          <img src="/oasis-logo.png" alt="Oasis Makeup Logo" className="navbar__logo-icon" width="38" height="38" />
           <span className="navbar__logo-text">
             <span className="navbar__logo-oasis">OASIS</span>
-            <span className="navbar__logo-sub">COSMÉTICA</span>
+            <span className="navbar__logo-sub">MAKEUP</span>
           </span>
         </a>
 

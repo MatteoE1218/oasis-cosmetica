@@ -13,7 +13,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.loader__logo-icon {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 22px rgba(247, 37, 133, 0.45));
+  animation: float 3.5s ease-in-out infinite;
+  margin-bottom: var(--space-xs);
 }
 
 .loader__brand {
@@ -34,16 +43,17 @@
 .loader__tagline {
   font-family: var(--font-body);
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  letter-spacing: 0.3em;
+  color: var(--color-accent-primary);
+  letter-spacing: 0.25em;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .loader__progress {
   position: relative;
   width: clamp(180px, 30vw, 280px);
-  height: 2px;
-  background: rgba(26, 26, 26, 0.08);
+  height: 3px;
+  background: rgba(247, 37, 133, 0.12);
   border-radius: var(--radius-full);
   overflow: hidden;
   margin-top: var(--space-md);
@@ -51,7 +61,8 @@
 
 .loader__bar-fill {
   height: 100%;
-  background: var(--color-text-primary);
+  background: var(--gradient-oasis);
+  box-shadow: 0 0 10px rgba(247, 37, 133, 0.5);
   border-radius: var(--radius-full);
   transition: width 120ms ease-out;
 }

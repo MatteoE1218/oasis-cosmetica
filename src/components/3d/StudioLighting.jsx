@@ -24,21 +24,21 @@ export default function StudioLighting() {
     const gp = scrollState.globalProgress || 0
 
     if (gp < 0.25) {
-      // Act 1: Hero / Ivory
-      keyColor.current.set('#FFFBF5')
-      rimColor.current.set('#FFE8D6')
+      // Act 1: Hero / Pure White & Soft Blush
+      keyColor.current.set('#FFFFFF')
+      rimColor.current.set('#FFE3EC')
     } else if (gp >= 0.25 && gp < 0.52) {
-      // Act 2: Lipstick / Dusty Rose
-      keyColor.current.set('#FFF5F5')
-      rimColor.current.set('#FAD0D6')
+      // Act 2: Lipstick / Pink Sparkle
+      keyColor.current.set('#FFFDFD')
+      rimColor.current.set('#FFB6C1')
     } else if (gp >= 0.52 && gp < 0.78) {
-      // Act 3: Liquid Foundation / Warm Beige
-      keyColor.current.set('#FFF8F0')
-      rimColor.current.set('#EEDBC8')
+      // Act 3: Liquid Foundation / Soft Pink
+      keyColor.current.set('#FFFFFF')
+      rimColor.current.set('#FFF0F5')
     } else {
-      // Act 4: Compact Powder / Porcelain
-      keyColor.current.set('#FAF8F5')
-      rimColor.current.set('#E8DFD5')
+      // Act 4: Compact Powder / Luminous Ivory
+      keyColor.current.set('#FAFAFA')
+      rimColor.current.set('#FFE3EC')
     }
 
     if (keyLightRef.current) {
@@ -95,12 +95,12 @@ export default function StudioLighting() {
       />
 
       {/* Radiant Studio Ambient Light */}
-      <ambientLight intensity={0.75} color="#FAF7F2" />
+      <ambientLight intensity={0.8} color="#FFFFFF" />
 
       {/* Hemisphere light — clean studio sky/ground bounce */}
       <hemisphereLight
         ref={hemiLightRef}
-        args={['#FFFFFF', '#F5EFEB', 0.65]}
+        args={['#FFFFFF', '#FFF0F5', 0.65]}
       />
     </>
   )

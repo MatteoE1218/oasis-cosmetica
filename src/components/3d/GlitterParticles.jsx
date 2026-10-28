@@ -16,14 +16,14 @@ export default function GlitterParticles({ count = 150, radius = 7 }) {
     const siz = new Float32Array(count)
     const spd = new Float32Array(count)
 
-    // Palette: soft rose, warm gold, champagne, bronze
+    // Palette: Oasis fuchsia, bright pink, soft blush, sparkle pink, pure diamond
     const palette = [
-      new THREE.Color('#C55367'),
-      new THREE.Color('#D4A574'),
-      new THREE.Color('#C5A059'),
-      new THREE.Color('#E8B0BA'),
-      new THREE.Color('#B8860B'),
-      new THREE.Color('#8E6B73'),
+      new THREE.Color('#FF1493'),
+      new THREE.Color('#F72585'),
+      new THREE.Color('#FF3399'),
+      new THREE.Color('#FFB6C1'),
+      new THREE.Color('#FFE3EC'),
+      new THREE.Color('#FFFFFF'),
     ]
 
     for (let i = 0; i < count; i++) {

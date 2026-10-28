@@ -70,8 +70,17 @@ export default function Loader({ onComplete }) {
   return (
     <div ref={loaderRef} className="loader" id="loader">
       <div className="loader__inner">
+        {/* Logo insignia */}
+        <img
+          src="/oasis-logo.png"
+          alt="Oasis Makeup"
+          className="loader__logo-icon"
+          width="76"
+          height="76"
+        />
+
         {/* Brand name — letter by letter */}
-        <div ref={brandRef} className="loader__brand" aria-label="Oasis">
+        <div ref={brandRef} className="loader__brand" aria-label="Oasis Makeup">
           {'OASIS'.split('').map((letter, i) => (
             <span key={i} className="loader__letter">
               {letter}
@@ -79,7 +88,7 @@ export default function Loader({ onComplete }) {
           ))}
         </div>
 
-        <p className="loader__tagline">Alta Cosmética</p>
+        <p className="loader__tagline">Oasis Makeup · Alta Cosmética</p>
 
         {/* Progress bar */}
         <div className="loader__progress">

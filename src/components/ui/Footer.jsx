@@ -37,9 +37,12 @@ export default function Footer() {
       <div className="container footer__inner">
         {/* Brand */}
         <div className="footer__brand">
-          <span className="footer__logo">◆ OASIS</span>
+          <div className="footer__logo-wrap">
+            <img src="/oasis-logo.png" alt="Oasis Makeup" className="footer__logo-icon" width="34" height="34" />
+            <span className="footer__logo">OASIS MAKEUP</span>
+          </div>
           <p className="footer__brand-desc">
-            Maquillaje de alta calidad y cosméticos en tendencia.
+            Maquillaje de alta cosmética y productos en tendencia.
             Descubre nuestras fórmulas y crea tu pack personalizado con mensaje especial.
           </p>
         </div>
@@ -89,9 +92,9 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
-          <p>© 2026 Oasis Cosmética. Todos los derechos reservados.</p>
+          <p>© 2026 Oasis Makeup. Todos los derechos reservados.</p>
           <p className="footer__tech">
-            Creado con <span aria-label="amor">♥</span> para Oasis Cosmética
+            Creado con <span aria-label="amor">♥</span> para Oasis Makeup
           </p>
         </div>
       </div>
