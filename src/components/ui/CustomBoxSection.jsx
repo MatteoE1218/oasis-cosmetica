@@ -115,16 +115,23 @@ export default function CustomBoxSection() {
       .filter(Boolean)
       .join(', ')
 
+    const cleanRecipient = recipient.trim() || 'Alguien Especial'
+    const cleanSender = sender.trim()
+
     dispatch({
       type: 'ADD_ITEM',
       item: {
         id: `pack-${Date.now()}`,
-        name: `Pack Personalizado (${selectedBox.name})`,
+        name: `Pack de Regalo (${selectedBox.name})`,
         price: total,
-        shade: `${selectedProducts.length} productos • ${recipient ? `Para: ${recipient}` : 'Con dedicatoria'}`,
+        shade: `${selectedProducts.length} cosméticos • Para: ${cleanRecipient}${cleanSender ? ` | De: ${cleanSender}` : ''}`,
         shadeHex: selectedBox.borderColor,
         icon: '🎁',
-        customMessage: message,
+        isPack: true,
+        boxName: selectedBox.name,
+        recipient: cleanRecipient,
+        sender: cleanSender,
+        customMessage: message.trim(),
         itemsIncluded: productNames,
       },
     })

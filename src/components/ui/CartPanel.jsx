@@ -64,27 +64,74 @@ export default function CartPanel() {
   const handleWhatsAppCheckout = () => {
     if (cart.items.length === 0) return
 
-    let message = `¡Hola Oasis Makeup! 👋✨ Deseo realizar el siguiente pedido:\n\n`
-
-    cart.items.forEach((item, index) => {
-      message += `🛍️ *${index + 1}. ${item.name}*\n`
-      if (item.shade) {
-        message += `   • Tono / Selección: ${item.shade}\n`
-      }
-      if (item.itemsIncluded) {
-        message += `   • Cosméticos en pack: ${item.itemsIncluded}\n`
-      }
-      if (item.customMessage) {
-        message += `   • 💌 Mensaje dedicatoria: "${item.customMessage}"\n`
-      }
-      message += `   • Cantidad: ${item.qty} | Subtotal: $${(item.price * item.qty).toFixed(2)}\n\n`
+    // Generador de código de pedido único y estético (Ej. #OS-4821)
+    const orderCode = 'OS-' + Math.floor(1000 + Math.random() * 9000)
+    const fecha = new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     })
 
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`
-    message += `📦 *Total artículos:* ${cart.totalItems}\n`
-    message += `💳 *TOTAL ESTIMADO:* $${cart.totalPrice.toFixed(2)}\n\n`
-    message += `¿Me confirman la disponibilidad y los datos para realizar el pago? ¡Muchas gracias!`
+    let lines = []
 
+    lines.push(`✨ *OASIS MAKEUP • NUEVA ORDEN* ✨`)
+    lines.push(`_Boutique de Alta Cosmética_`)
+    lines.push(`----------------------------------------`)
+    lines.push(`📋 *Pedido:* #${orderCode}`)
+    lines.push(`📅 *Fecha:* ${fecha}`)
+    lines.push(`----------------------------------------`)
+    lines.push(``)
+    lines.push(`💄 *PRODUCTOS SELECCIONADOS:*`)
+    lines.push(``)
+
+    cart.items.forEach((item, index) => {
+      const isPack = item.isPack || item.name.includes('Pack')
+      const itemIcon = isPack ? '🎁' : '💄'
+
+      lines.push(`${itemIcon} *${index + 1}. ${item.name}*`)
+
+      if (isPack) {
+        if (item.recipient) {
+          lines.push(`   • *Para:* ${item.recipient}`)
+        }
+        if (item.sender) {
+          lines.push(`   • *De parte de:* ${item.sender}`)
+        }
+        if (item.itemsIncluded) {
+          lines.push(`   • *Cosméticos incluidos:* ${item.itemsIncluded}`)
+        }
+        if (item.customMessage) {
+          lines.push(`   • *Tarjeta con dedicatoria:*`)
+          lines.push(`     _“${item.customMessage}”_`)
+        }
+      } else {
+        if (item.shade) {
+          lines.push(`   • *Tono / Matiz:* ${item.shade}`)
+        }
+        if (item.customMessage) {
+          lines.push(`   • *Dedicatoria:* _“${item.customMessage}”_`)
+        }
+      }
+
+      lines.push(`   • *Cantidad:* ${item.qty} ${item.qty > 1 ? 'unidades' : 'unidad'}`)
+      lines.push(`   • *Subtotal:* $${(item.price * item.qty).toFixed(2)}`)
+      lines.push(``)
+    })
+
+    lines.push(`----------------------------------------`)
+    lines.push(`📊 *RESUMEN DE COMPRA:*`)
+    lines.push(`• *Total de artículos:* ${cart.totalItems}`)
+    lines.push(`• *TOTAL A PAGAR:* *$${cart.totalPrice.toFixed(2)}*`)
+    lines.push(`----------------------------------------`)
+    lines.push(``)
+    lines.push(`📍 *DATOS PARA EL ENVÍO & PAGO:*`)
+    lines.push(`• *Nombre de quien recibe:* `)
+    lines.push(`• *Ciudad / Dirección:* `)
+    lines.push(`• *Método de pago preferido:* (Transferencia / Depósito / Efectivo)`)
+    lines.push(``)
+    lines.push(`_¡Hola Oasis Makeup! Deseo coordinar el pago y envío de mi pedido. ¿Me confirman disponibilidad y los datos para realizar la transferencia? ¡Muchas gracias!_`)
+
+    const message = lines.join('\n')
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
@@ -144,6 +191,11 @@ export default function CartPanel() {
                 <div className="cart-item__info">
                   <p className="cart-item__name">{item.name}</p>
                   <p className="cart-item__shade">{item.shade}</p>
+                  {item.recipient && (
+                    <p className="cart-item__gift-meta" style={{ fontSize: '0.74rem', color: 'var(--color-text-primary)', marginTop: '0.2rem' }}>
+                      🎁 <strong>Para:</strong> {item.recipient} {item.sender ? <span>• <strong>De:</strong> {item.sender}</span> : ''}
+                    </p>
+                  )}
                   {item.customMessage && (
                     <p className="cart-item__custom-msg" style={{ fontSize: '0.72rem', fontStyle: 'italic', color: 'var(--color-accent-primary)', marginTop: '0.2rem' }}>
                       💌 “{item.customMessage}”
