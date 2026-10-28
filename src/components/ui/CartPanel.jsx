@@ -74,20 +74,21 @@ export default function CartPanel() {
 
     let lines = []
 
-    lines.push(`*OASIS MAKEUP • ORDEN DE COMPRA*`)
-    lines.push(`_Boutique de Cosmética & Belleza_`)
+    lines.push(`✨ *OASIS MAKEUP • NUEVA ORDEN* ✨`)
+    lines.push(`_Boutique de Alta Cosmética_`)
     lines.push(`----------------------------------------`)
-    lines.push(`*Pedido:* #${orderCode}`)
-    lines.push(`*Fecha:* ${fecha}`)
+    lines.push(`📋 *Pedido:* #${orderCode}`)
+    lines.push(`📅 *Fecha:* ${fecha}`)
     lines.push(`----------------------------------------`)
     lines.push(``)
-    lines.push(`*DETALLE DE PRODUCTOS:*`)
+    lines.push(`💄 *PRODUCTOS SELECCIONADOS:*`)
     lines.push(``)
 
     cart.items.forEach((item, index) => {
       const isPack = item.isPack || item.name.includes('Pack')
+      const itemIcon = isPack ? '🎁' : '💄'
 
-      lines.push(`*${index + 1}. ${item.name}*`)
+      lines.push(`${itemIcon} *${index + 1}. ${item.name}*`)
 
       if (isPack) {
         if (item.recipient) {
@@ -100,15 +101,15 @@ export default function CartPanel() {
           lines.push(`   • *Cosméticos incluidos:* ${item.itemsIncluded}`)
         }
         if (item.customMessage) {
-          lines.push(`   • *Tarjeta con dedicatoria:*`)
-          lines.push(`     > "${item.customMessage}"`)
+          lines.push(`   • 💌 *Tarjeta con dedicatoria:*`)
+          lines.push(`     _“${item.customMessage}”_`)
         }
       } else {
         if (item.shade) {
           lines.push(`   • *Tono / Matiz:* ${item.shade}`)
         }
         if (item.customMessage) {
-          lines.push(`   • *Dedicatoria:* > "${item.customMessage}"`)
+          lines.push(`   • 💌 *Dedicatoria:* _“${item.customMessage}”_`)
         }
       }
 
@@ -118,12 +119,12 @@ export default function CartPanel() {
     })
 
     lines.push(`----------------------------------------`)
-    lines.push(`*RESUMEN DE COMPRA:*`)
+    lines.push(`📊 *RESUMEN DE COMPRA:*`)
     lines.push(`• *Total de artículos:* ${cart.totalItems}`)
     lines.push(`• *TOTAL A PAGAR:* *$${cart.totalPrice.toFixed(2)}*`)
     lines.push(`----------------------------------------`)
     lines.push(``)
-    lines.push(`*DATOS PARA EL ENVÍO & PAGO:*`)
+    lines.push(`📍 *DATOS PARA EL ENVÍO & PAGO:*`)
     lines.push(`• *Nombre de quien recibe:* `)
     lines.push(`• *Ciudad / Dirección:* `)
     lines.push(`• *Método de pago preferido:* (Transferencia / Depósito / Efectivo)`)
@@ -131,7 +132,16 @@ export default function CartPanel() {
     lines.push(`_¡Hola Oasis Makeup! Deseo coordinar el pago y envío de mi pedido. ¿Me confirman disponibilidad y los datos para realizar la transferencia? ¡Muchas gracias!_`)
 
     const message = lines.join('\n')
-    const url = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`
+    const encoded = encodeURIComponent(message)
+
+    // Detección automática de dispositivo:
+    // En móviles abre la app nativa de WhatsApp.
+    // En PC / Mac abre WhatsApp Web para que el navegador renderice los emojis en UTF-8 perfecto sin el bug del protocolo de Windows.
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const url = isMobile
+      ? `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encoded}`
+      : `https://web.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encoded}`
+
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
