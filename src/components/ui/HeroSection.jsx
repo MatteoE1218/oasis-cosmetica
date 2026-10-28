@@ -150,13 +150,13 @@ export default function HeroSection() {
           </div>
           <div className="hero__highlight-divider" />
           <div className="hero__highlight-item">
-            <span className="hero__highlight-num">100%</span>
-            <span className="hero__highlight-label">Vegano & Puro</span>
+            <span className="hero__highlight-num">HD</span>
+            <span className="hero__highlight-label">Alta Pigmentación</span>
           </div>
           <div className="hero__highlight-divider" />
           <div className="hero__highlight-item">
-            <span className="hero__highlight-num">0%</span>
-            <span className="hero__highlight-label">Crueldad Animal</span>
+            <span className="hero__highlight-num">PRO</span>
+            <span className="hero__highlight-label">Acabado de Estudio</span>
           </div>
         </div>
       </div>

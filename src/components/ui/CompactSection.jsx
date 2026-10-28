@@ -125,8 +125,8 @@ export default function CompactSection() {
 
           <p className="compact-desc">
             Polvos micro-aireados con tecnología difusora de luz. Enriquecidos con 
-            extracto de perlas naturales de río, unifican la tez al instante y matifican 
-            con suavidad aterciopelada, manteniendo la frescura y vitalidad orgánica del rostro.
+            extracto de perlas de brillo fino, unifican la tez al instante y matifican 
+            con suavidad aterciopelada, manteniendo la frescura y luminosidad radiante del rostro.
           </p>
 
           {/* Feature Pills */}

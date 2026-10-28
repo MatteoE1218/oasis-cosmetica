@@ -3,17 +3,11 @@ import './WhatsAppButton.css'
 
 /**
  * Floating WhatsApp Button
- * Botón elegante de WhatsApp para el emprendimiento de maquillaje.
- * Actualmente sin redirección (href="#") para configurar posteriormente el número deseado.
+ * Conectado al número oficial de Oasis Makeup: +593 998346794
  */
 export default function WhatsAppButton() {
   const [showTooltip, setShowTooltip] = useState(false)
-
-  const handleClick = (e) => {
-    e.preventDefault()
-    // Sin redirección actualmente (placeholder listo para añadir número)
-    console.log('WhatsApp clic: listo para conectar con tu número')
-  }
+  const whatsappUrl = 'https://wa.me/593998346794?text=' + encodeURIComponent('¡Hola Oasis Makeup! 👋 Deseo más información y asesoría sobre sus cosméticos.')
 
   return (
     <div 
@@ -29,10 +23,11 @@ export default function WhatsAppButton() {
 
       {/* Botón principal */}
       <a
-        href="#"
-        onClick={handleClick}
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
         className="whatsapp-btn"
-        aria-label="Contactar por WhatsApp"
+        aria-label="Contactar por WhatsApp al +593 998346794"
         id="btn-whatsapp"
       >
         <span className="whatsapp-btn__pulse" aria-hidden="true" />
