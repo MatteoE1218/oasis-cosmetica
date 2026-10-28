@@ -5,10 +5,10 @@ import './Footer.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-// Enlaces de redes sociales — actualizables con tus perfiles oficiales
+// Enlaces oficiales de redes sociales
 export const SOCIAL_LINKS = {
-  instagram: 'https://instagram.com', // Pega aquí tu perfil de Instagram
-  tiktok: 'https://tiktok.com',       // Pega aquí tu perfil de TikTok
+  instagram: 'https://www.instagram.com/oasis._ec?dlrf=MWhraDVmNzQ1cDczZQ%3D%3D&utm_source=qr',
+  tiktok: 'https://www.tiktok.com/@oasiis._ec?_r=1&_t=ZS-9AwMkHDcAFy',
 }
 
 export default function Footer() {
@@ -61,8 +61,8 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer__social-btn footer__social-btn--instagram"
-                aria-label="Síguenos en Instagram"
-                title="Instagram @oasis.makeup"
+                aria-label="Síguenos en Instagram @oasis._ec"
+                title="Instagram @oasis._ec"
                 id="footer-social-instagram"
               >
                 <svg
@@ -88,8 +88,8 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="footer__social-btn footer__social-btn--tiktok"
-                aria-label="Síguenos en TikTok"
-                title="TikTok @oasis.makeup"
+                aria-label="Síguenos en TikTok @oasiis._ec"
+                title="TikTok @oasiis._ec"
                 id="footer-social-tiktok"
               >
                 <svg
