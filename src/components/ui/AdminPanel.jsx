@@ -1216,6 +1216,21 @@ export default function AdminPanel() {
                         🔄 Guardar y Sincronizar con Supabase
                       </button>
                     </div>
+                    {syncMessage && (
+                      <p
+                        style={{
+                          marginTop: '0.75rem',
+                          fontSize: '0.8rem',
+                          padding: '0.6rem 0.85rem',
+                          borderRadius: '10px',
+                          background: syncStatus === 'cloud' ? '#e8f5e9' : '#fff3e0',
+                          color: syncStatus === 'cloud' ? '#1b5e20' : '#b45309',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Estado: {syncMessage}
+                      </p>
+                    )}
                   </div>
 
                   <div className="admin-cloud-card">

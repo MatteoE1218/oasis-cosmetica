@@ -51,13 +51,18 @@ export function getSupabaseSession() {
 function getHeaders(extra = {}) {
   const { anonKey } = getSupabaseConfig()
   const session = getSupabaseSession()
-  const token = session?.access_token || anonKey
-  return {
+  const token = session?.access_token
+  const headers = {
     apikey: anonKey,
-    Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
     ...extra,
   }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  } else if (anonKey && anonKey.startsWith('eyJ')) {
+    headers.Authorization = `Bearer ${anonKey}`
+  }
+  return headers
 }
 
 /* ── Auth (Supabase GoTrue) ── */
@@ -313,5 +318,8 @@ create policy "Actualizar fotos catalogo"
   on storage.objects for update
   to anon, authenticated
   using (bucket_id = 'catalog-images');
+
+-- 5. Recargar caché de esquema de la API de Supabase
+NOTIFY pgrst, 'reload schema';
 `
 

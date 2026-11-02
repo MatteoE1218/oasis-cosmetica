@@ -91,12 +91,9 @@ export function CatalogProvider({ children }) {
         }
       }
     } catch (err) {
+      const errMsg = err?.message || String(err)
       setSyncStatus('local')
-      setSyncMessage(
-        err.message?.includes('relation') || err.message?.includes('404')
-          ? 'Modo Local activo (Ejecuta el SQL en Supabase para sincronizar en la nube)'
-          : 'Modo Local activo'
-      )
+      setSyncMessage(`Detalle de conexión Supabase: ${errMsg}`)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
