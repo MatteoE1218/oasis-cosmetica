@@ -10,8 +10,18 @@ import {
 const CatalogContext = createContext(null)
 
 const LOCAL_CATALOG_KEY = 'oasis_catalog_products_v1'
+const FEATURED_SLOTS_KEY = 'oasis_featured_slots_v1'
 const ADMIN_PIN_KEY = 'oasis_admin_pin_v1'
 const DEFAULT_ADMIN_PIN = 'oasis2026'
+
+const DEFAULT_FEATURED_SLOTS = {
+  slot1Id: '1', // Sección Destacada 1 (Labial / Producto Estrella 1)
+  slot2Id: '3', // Sección Destacada 2 (Sérum / Base / Producto Estrella 2)
+  slot3Id: '2', // Sección Destacada 3 (Polvo / Paleta / Producto Estrella 3)
+  slot1Use3D: false, // false = si tiene foto real muestra la foto real, si no tiene foto muestra el 3D
+  slot2Use3D: false,
+  slot3Use3D: false,
+}
 
 function normalizeProduct(p, index = 0) {
   return {
@@ -51,6 +61,30 @@ export function CatalogProvider({ children }) {
     }
     return defaultProducts.map(normalizeProduct)
   })
+
+  const [featuredSlots, setFeaturedSlots] = useState(() => {
+    try {
+      const saved = localStorage.getItem(FEATURED_SLOTS_KEY)
+      if (saved) {
+        return { ...DEFAULT_FEATURED_SLOTS, ...JSON.parse(saved) }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_FEATURED_SLOTS
+  })
+
+  const updateFeaturedSlots = useCallback((nextSlots) => {
+    setFeaturedSlots((prev) => {
+      const merged = { ...prev, ...nextSlots }
+      try {
+        localStorage.setItem(FEATURED_SLOTS_KEY, JSON.stringify(merged))
+      } catch {
+        // ignore
+      }
+      return merged
+    })
+  }, [])
 
   const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
@@ -231,6 +265,8 @@ export function CatalogProvider({ children }) {
     () => ({
       products,
       categories,
+      featuredSlots,
+      updateFeaturedSlots,
       isAdminOpen,
       setIsAdminOpen,
       closeAdminPanel,
@@ -249,6 +285,8 @@ export function CatalogProvider({ children }) {
     [
       products,
       categories,
+      featuredSlots,
+      updateFeaturedSlots,
       isAdminOpen,
       closeAdminPanel,
       isAdminAuthenticated,

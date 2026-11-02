@@ -2,22 +2,19 @@ import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useCartDispatch } from '../../stores/CartContext'
+import { useCatalog } from '../../stores/CatalogContext'
 import ProductViewer3D from '../3d/ProductViewer3D'
 import './CompactSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const shades = [
+const defaultShades = [
   { name: 'Seda Rosa 01', hex: '#E8B0BA', benefit: 'Aporta luminosidad rosada inmediata' },
   { name: 'Seda Natural 02', hex: '#D8BA9E', benefit: 'Unifica y difumina poros' },
   { name: 'Bronce Terracota 03', hex: '#C48E72', benefit: 'Esculpe con calidez dorada' },
   { name: 'Perla Estelar 04', hex: '#FFF4E6', benefit: 'Reflejos estroboscópicos micro-perla' },
 ]
 
-/**
- * Sección 4 — Polvos Compactos / Poudre Éclat
- * Features in-section 3D showcase that smoothly slides in from the right on scroll.
- */
 export default function CompactSection() {
   const sectionRef = useRef(null)
   const contentRef = useRef(null)
@@ -25,6 +22,30 @@ export default function CompactSection() {
   const [selectedShade, setSelectedShade] = useState(0)
   const [addedAnimation, setAddedAnimation] = useState(false)
   const dispatch = useCartDispatch()
+  const { products, featuredSlots } = useCatalog()
+
+  const featuredProduct =
+    products.find((p) => String(p.id) === String(featuredSlots?.slot3Id)) ||
+    products[1] ||
+    products[0]
+
+  const shades =
+    Array.isArray(featuredProduct?.shades) && featuredProduct.shades.length > 0
+      ? featuredProduct.shades.map((s) => ({
+          name: s.name,
+          hex: s.hex,
+          benefit: featuredProduct.tagline || 'Acabado de Estudio Profesional',
+        }))
+      : defaultShades
+
+  const active = shades[selectedShade] || shades[0]
+  const displayName = featuredProduct?.name || 'Polvo Resplandor'
+  const displayTagline = featuredProduct?.tagline || 'Seda & Velo Perfeccionador'
+  const displayDesc =
+    featuredProduct?.description ||
+    'Polvos micro-aireados con tecnología difusora de luz. Enriquecidos con extracto de perlas de brillo fino, unifican la tez al instante y matifican con suavidad aterciopelada, manteniendo la frescura y luminosidad radiante del rostro.'
+  const displayPrice = Number(featuredProduct?.price ?? 68.0)
+  const displayImage = featuredSlots?.slot3Use3D ? '' : featuredProduct?.image || ''
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -93,20 +114,19 @@ export default function CompactSection() {
     dispatch({
       type: 'ADD_ITEM',
       item: {
-        id: 2,
-        name: 'Polvo Resplandor',
-        price: 68.0,
-        shade: shades[selectedShade].name,
-        shadeHex: shades[selectedShade].hex,
-        icon: '🎨',
+        id: featuredProduct?.id || 2,
+        name: displayName,
+        price: displayPrice,
+        shade: active.name,
+        shadeHex: active.hex,
+        icon: featuredProduct?.icon || '🎨',
+        image: displayImage,
       },
     })
     setAddedAnimation(true)
     setTimeout(() => setAddedAnimation(false), 1200)
     dispatch({ type: 'SET_PANEL', isOpen: true })
   }
-
-  const active = shades[selectedShade]
 
   return (
     <section ref={sectionRef} className="compact-section section" id="compacto">
@@ -115,19 +135,17 @@ export default function CompactSection() {
         <div ref={contentRef} className="compact-content">
           <div className="compact-tag">
             <span className="compact-tag__dot" />
-            <span>Edición Limitada • Laca Blanca & Espejo de Alta Definición</span>
+            <span>
+              {featuredProduct?.category || 'Edición Limitada'} • {featuredProduct?.badge || 'Destacado'}
+            </span>
           </div>
 
           <h2 className="compact-title">
-            Polvo Resplandor <br />
-            <span className="text-gradient">Seda & Velo Perfeccionador</span>
+            {displayName} <br />
+            <span className="text-gradient">{displayTagline}</span>
           </h2>
 
-          <p className="compact-desc">
-            Polvos micro-aireados con tecnología difusora de luz. Enriquecidos con 
-            extracto de perlas de brillo fino, unifican la tez al instante y matifican 
-            con suavidad aterciopelada, manteniendo la frescura y luminosidad radiante del rostro.
-          </p>
+          <p className="compact-desc">{displayDesc}</p>
 
           {/* Feature Pills */}
           <div className="compact-features">
@@ -188,10 +206,10 @@ export default function CompactSection() {
               id="compact-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="compact-btn-price">• $68.00</span>
+              <span className="compact-btn-price">• ${displayPrice.toFixed(2)}</span>
             </button>
-            <a href="#colecciones" className="btn btn-outline">
-              Siguiente: Galería de Texturas
+            <a href="#catalogo" className="btn btn-outline">
+              Ver Todo el Catálogo
             </a>
           </div>
         </div>
@@ -201,7 +219,8 @@ export default function CompactSection() {
           <ProductViewer3D
             type="compact"
             activeShadeIndex={selectedShade}
-            badgeText="Polvo Resplandor • Estuche Joya"
+            badgeText={`${displayName} • Destacado`}
+            imageUrl={displayImage}
           />
         </div>
       </div>

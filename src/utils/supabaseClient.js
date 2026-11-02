@@ -12,6 +12,18 @@ const DEFAULT_SUPABASE_ANON_KEY =
 const CONFIG_STORAGE_KEY = 'oasis_supabase_config'
 const SESSION_STORAGE_KEY = 'oasis_supabase_session'
 
+function extractRefFromAnonKey(anonKey) {
+  try {
+    if (!anonKey || !anonKey.startsWith('eyJ')) return null
+    const payloadPart = anonKey.split('.')[1]
+    if (!payloadPart) return null
+    const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')))
+    return decoded.ref || null
+  } catch {
+    return null
+  }
+}
+
 export function getSupabaseConfig() {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY)
@@ -22,16 +34,28 @@ export function getSupabaseConfig() {
   } catch {
     // ignore
   }
+  const refFromKey = extractRefFromAnonKey(DEFAULT_SUPABASE_ANON_KEY)
+  const autoUrl = refFromKey ? `https://${refFromKey}.supabase.co` : DEFAULT_SUPABASE_URL
   return {
-    url: DEFAULT_SUPABASE_URL.replace(/\/$/, ''),
+    url: autoUrl.replace(/\/$/, ''),
     anonKey: DEFAULT_SUPABASE_ANON_KEY,
   }
 }
 
 export function saveSupabaseConfig(url, anonKey) {
+  const cleanKey = (anonKey || DEFAULT_SUPABASE_ANON_KEY).trim()
+  let cleanUrl = (url || '').trim().replace(/\/$/, '')
+  // Si el usuario pegó la URL completa del dashboard (ej. https://supabase.com/dashboard/project/xyz/...)
+  const dashMatch = cleanUrl.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i)
+  if (dashMatch) {
+    cleanUrl = `https://${dashMatch[1]}.supabase.co`
+  } else if (!cleanUrl) {
+    const ref = extractRefFromAnonKey(cleanKey)
+    cleanUrl = ref ? `https://${ref}.supabase.co` : DEFAULT_SUPABASE_URL
+  }
   const clean = {
-    url: (url || DEFAULT_SUPABASE_URL).trim().replace(/\/$/, ''),
-    anonKey: (anonKey || DEFAULT_SUPABASE_ANON_KEY).trim(),
+    url: cleanUrl,
+    anonKey: cleanKey,
   }
   localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(clean))
   return clean

@@ -2,12 +2,13 @@ import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useCartDispatch } from '../../stores/CartContext'
+import { useCatalog } from '../../stores/CatalogContext'
 import ProductViewer3D from '../3d/ProductViewer3D'
 import './LipstickSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const shades = [
+const defaultShades = [
   { name: 'Carmesí Imperial 01', hex: '#C52844', mood: 'Rojo Icono', finish: 'Satén Lujoso' },
   { name: 'Borgoña Nocturno 02', hex: '#6B1D3A', mood: 'Intenso Nocturno', finish: 'Terciopelo Mate' },
   { name: 'Coral Radiante 03', hex: '#E06050', mood: 'Brillo Solar', finish: 'Cremoso Radiante' },
@@ -15,10 +16,6 @@ const shades = [
   { name: 'Baya Estrella 05', hex: '#8B2252', mood: 'Baya Noble', finish: 'Satén Profundo' },
 ]
 
-/**
- * Sección 2 — Pintalabios / Rouge Éternel
- * Features in-section 3D showcase that smoothly slides in from the right on scroll.
- */
 export default function LipstickSection() {
   const sectionRef = useRef(null)
   const contentRef = useRef(null)
@@ -26,6 +23,30 @@ export default function LipstickSection() {
   const [selectedShade, setSelectedShade] = useState(0)
   const [addedAnimation, setAddedAnimation] = useState(false)
   const dispatch = useCartDispatch()
+  const { products, featuredSlots } = useCatalog()
+
+  const featuredProduct =
+    products.find((p) => String(p.id) === String(featuredSlots?.slot1Id)) ||
+    products[0]
+
+  const shades =
+    Array.isArray(featuredProduct?.shades) && featuredProduct.shades.length > 0
+      ? featuredProduct.shades.map((s) => ({
+          name: s.name,
+          hex: s.hex,
+          mood: featuredProduct.category || 'Tono Exclusivo',
+          finish: featuredProduct.badge || 'Alta Pigmentación',
+        }))
+      : defaultShades
+
+  const active = shades[selectedShade] || shades[0]
+  const displayName = featuredProduct?.name || 'Labial Eterno'
+  const displayTagline = featuredProduct?.tagline || 'Intensidad & Confort Supremo'
+  const displayDesc =
+    featuredProduct?.description ||
+    'Formulado con aceites nutritivos y pigmentos puros de alta saturación. Su punta biselada se desliza con suavidad sobre los labios, vistiendo tu sonrisa con un color vibrante, aterciopelado y de larga duración.'
+  const displayPrice = Number(featuredProduct?.price ?? 42.0)
+  const displayImage = featuredSlots?.slot1Use3D ? '' : featuredProduct?.image || ''
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -94,20 +115,19 @@ export default function LipstickSection() {
     dispatch({
       type: 'ADD_ITEM',
       item: {
-        id: 1,
-        name: 'Labial Eterno',
-        price: 42.0,
-        shade: shades[selectedShade].name,
-        shadeHex: shades[selectedShade].hex,
-        icon: '💄',
+        id: featuredProduct?.id || 1,
+        name: displayName,
+        price: displayPrice,
+        shade: active.name,
+        shadeHex: active.hex,
+        icon: featuredProduct?.icon || '💄',
+        image: displayImage,
       },
     })
     setAddedAnimation(true)
     setTimeout(() => setAddedAnimation(false), 1200)
     dispatch({ type: 'SET_PANEL', isOpen: true })
   }
-
-  const active = shades[selectedShade]
 
   return (
     <section ref={sectionRef} className="lipstick-section section" id="lipstick">
@@ -116,19 +136,17 @@ export default function LipstickSection() {
         <div ref={contentRef} className="lipstick-content">
           <div className="lipstick-tag">
             <span className="lipstick-tag__dot" />
-            <span>Colección Exclusiva • Satén Terciopelo</span>
+            <span>
+              {featuredProduct?.category || 'Colección Exclusiva'} • {featuredProduct?.badge || 'Destacado'}
+            </span>
           </div>
 
           <h2 className="lipstick-title">
-            Labial Eterno <br />
-            <span className="text-gradient">Intensidad & Confort Supremo</span>
+            {displayName} <br />
+            <span className="text-gradient">{displayTagline}</span>
           </h2>
 
-          <p className="lipstick-desc">
-            Formulado con aceites nutritivos y pigmentos puros de alta saturación. 
-            Su punta biselada se desliza con suavidad sobre los labios, vistiendo 
-            tu sonrisa con un color vibrante, aterciopelado y de larga duración.
-          </p>
+          <p className="lipstick-desc">{displayDesc}</p>
 
           {/* Feature Pills */}
           <div className="lipstick-features">
@@ -189,10 +207,10 @@ export default function LipstickSection() {
               id="lipstick-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="lipstick-btn-price">• $42.00</span>
+              <span className="lipstick-btn-price">• ${displayPrice.toFixed(2)}</span>
             </button>
             <a href="#base-fluida" className="btn btn-outline">
-              Siguiente: Sérum Resplandor
+              Siguiente Destacado
             </a>
           </div>
         </div>
@@ -202,7 +220,8 @@ export default function LipstickSection() {
           <ProductViewer3D
             type="lipstick"
             color={active.hex}
-            badgeText="Labial Eterno • Vista en Vivo"
+            badgeText={`${displayName} • Vista en Vivo`}
+            imageUrl={displayImage}
           />
         </div>
       </div>

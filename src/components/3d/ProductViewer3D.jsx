@@ -370,6 +370,7 @@ export default function ProductViewer3D({
   color = '#C52844',
   activeShadeIndex = 0,
   badgeText = 'Vista del Producto',
+  imageUrl = '',
 }) {
   return (
     <div className="product-viewer-3d glass">
@@ -379,27 +380,33 @@ export default function ProductViewer3D({
         <span>{badgeText}</span>
       </div>
 
-      {/* Embedded 3D Canvas */}
-      <div className="product-viewer-3d__canvas-wrap">
-        <Canvas
-          gl={{
-            antialias: true,
-            alpha: true,
-            powerPreference: 'default',
-          }}
-          dpr={1}
-          camera={{ position: [0, 0.4, 4.2], fov: 40 }}
-        >
-          <PerspectiveCamera makeDefault position={[0, 0.4, 4.2]} fov={40} />
-          <StudioLighting />
+      {/* Si el producto destacado tiene foto real subida en el Admin, mostrarla con estilo editorial, o el visor 3D */}
+      {imageUrl ? (
+        <div className="product-viewer-3d__photo-wrap">
+          <img src={imageUrl} alt={badgeText} className="product-viewer-3d__photo" />
+        </div>
+      ) : (
+        <div className="product-viewer-3d__canvas-wrap">
+          <Canvas
+            gl={{
+              antialias: true,
+              alpha: true,
+              powerPreference: 'default',
+            }}
+            dpr={1}
+            camera={{ position: [0, 0.4, 4.2], fov: 40 }}
+          >
+            <PerspectiveCamera makeDefault position={[0, 0.4, 4.2]} fov={40} />
+            <StudioLighting />
 
-          <Suspense fallback={null}>
-            {type === 'lipstick' && <StaticLipstick color={color} />}
-            {type === 'serum' && <StaticSerumBottle color={color} />}
-            {type === 'compact' && <StaticCompact activeShadeIndex={activeShadeIndex} />}
-          </Suspense>
-        </Canvas>
-      </div>
+            <Suspense fallback={null}>
+              {type === 'lipstick' && <StaticLipstick color={color} />}
+              {type === 'serum' && <StaticSerumBottle color={color} />}
+              {type === 'compact' && <StaticCompact activeShadeIndex={activeShadeIndex} />}
+            </Suspense>
+          </Canvas>
+        </div>
+      )}
 
       {/* Pedestal Aura */}
       <div className="product-viewer-3d__aura" aria-hidden="true" />

@@ -41,6 +41,8 @@ export default function AdminPanel() {
   const {
     products,
     categories,
+    featuredSlots,
+    updateFeaturedSlots,
     isAdminOpen,
     closeAdminPanel,
     isAdminAuthenticated,
@@ -546,6 +548,13 @@ export default function AdminPanel() {
               </button>
               <button
                 type="button"
+                className={`admin-tab ${activeTab === 'featured' ? 'admin-tab--active' : ''}`}
+                onClick={() => setActiveTab('featured')}
+              >
+                ⭐ Destacados de Inicio
+              </button>
+              <button
+                type="button"
                 className={`admin-tab ${activeTab === 'single' ? 'admin-tab--active' : ''}`}
                 onClick={() => {
                   setIsEditing(false)
@@ -668,6 +677,134 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── PESTAÑA DESTACADOS DE INICIO ── */}
+            {activeTab === 'featured' && (
+              <div className="admin-section">
+                <div className="admin-section__toolbar">
+                  <div>
+                    <h3>⭐ Productos Destacados en la Portada de Inicio</h3>
+                    <p>
+                      Elige cuáles de tus productos reales del catálogo aparecen en las 3 grandes secciones principales de inicio (con su nombre, descripción, tonos, precio y foto real o modelo 3D).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="admin-cloud-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+                  {[
+                    {
+                      slotKey: 'slot1Id',
+                      use3DKey: 'slot1Use3D',
+                      title: 'Destacado Principal #1 (Sección Labiales / Top)',
+                      desc: 'Aparece justo debajo de la portada principal.',
+                    },
+                    {
+                      slotKey: 'slot2Id',
+                      use3DKey: 'slot2Use3D',
+                      title: 'Destacado Principal #2 (Sección Central)',
+                      desc: 'Aparece en la segunda vitrina grande de inicio.',
+                    },
+                    {
+                      slotKey: 'slot3Id',
+                      use3DKey: 'slot3Use3D',
+                      title: 'Destacado Principal #3 (Sección Polvos / Paletas)',
+                      desc: 'Aparece en la tercera vitrina grande antes del catálogo.',
+                    },
+                  ].map((slot) => {
+                    const selectedProd =
+                      products.find((p) => String(p.id) === String(featuredSlots?.[slot.slotKey])) ||
+                      products[0]
+                    return (
+                      <div key={slot.slotKey} className="admin-cloud-card">
+                        <h4>{slot.title}</h4>
+                        <p style={{ fontSize: '0.8rem', color: '#6b5b63', marginBottom: '1rem' }}>
+                          {slot.desc}
+                        </p>
+
+                        <div className="admin-field">
+                          <label>Producto a mostrar en esta sección:</label>
+                          <select
+                            value={selectedProd?.id || ''}
+                            onChange={(e) => {
+                              updateFeaturedSlots({ [slot.slotKey]: e.target.value })
+                              showToast('✓ Producto destacado de inicio actualizado en vivo')
+                            }}
+                          >
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.icon} {p.name} — ${Number(p.price).toFixed(2)} ({p.category})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {selectedProd && (
+                          <div
+                            style={{
+                              marginTop: '1rem',
+                              padding: '0.85rem',
+                              borderRadius: '12px',
+                              background: '#fdf4f8',
+                              border: '1px solid rgba(247, 37, 133, 0.18)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.85rem',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '58px',
+                                height: '58px',
+                                borderRadius: '10px',
+                                background: selectedProd.gradient,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {selectedProd.image ? (
+                                <img
+                                  src={selectedProd.image}
+                                  alt={selectedProd.name}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <span style={{ fontSize: '1.6rem' }}>{selectedProd.icon}</span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.8rem' }}>
+                              <strong>{selectedProd.name}</strong>
+                              <div style={{ color: '#f72585', fontWeight: 700 }}>
+                                ${Number(selectedProd.price).toFixed(2)}
+                              </div>
+                              <div style={{ color: '#6b5b63' }}>
+                                {selectedProd.shades?.length || 1} tonos disponibles
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <label className="admin-checkbox-label" style={{ marginTop: '0.9rem' }}>
+                          <input
+                            type="checkbox"
+                            checked={!featuredSlots?.[slot.use3DKey]}
+                            onChange={(e) => {
+                              updateFeaturedSlots({ [slot.use3DKey]: !e.target.checked })
+                              showToast('Preferencia visual actualizada')
+                            }}
+                          />
+                          <span>
+                            Mostrar la <strong>foto real subida</strong> del producto (si se desmarca, usa la escultura 3D interactiva)
+                          </span>
+                        </label>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -1188,9 +1325,10 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="admin-field" style={{ marginTop: '1rem' }}>
-                      <label>Project URL</label>
+                      <label>Project URL (o pega el link de tu navegador en Supabase)</label>
                       <input
                         type="text"
+                        placeholder="https://xxxxxxxx.supabase.co"
                         value={sbUrl}
                         onChange={(e) => setSbUrl(e.target.value)}
                       />
@@ -1200,7 +1338,22 @@ export default function AdminPanel() {
                       <input
                         type="password"
                         value={sbAnonKey}
-                        onChange={(e) => setSbAnonKey(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setSbAnonKey(val)
+                          try {
+                            if (val.startsWith('eyJ')) {
+                              const payload = JSON.parse(
+                                atob(val.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+                              )
+                              if (payload.ref) {
+                                setSbUrl(`https://${payload.ref}.supabase.co`)
+                              }
+                            }
+                          } catch {
+                            // ignore
+                          }
+                        }}
                       />
                     </div>
                     <div className="admin-toolbar-btns">
@@ -1208,7 +1361,8 @@ export default function AdminPanel() {
                         type="button"
                         className="admin-btn-secondary"
                         onClick={() => {
-                          saveSupabaseConfig(sbUrl, sbAnonKey)
+                          const saved = saveSupabaseConfig(sbUrl, sbAnonKey)
+                          setSbUrl(saved.url)
                           refreshFromCloud()
                           showToast('Configuración de Supabase actualizada y sincronizada')
                         }}

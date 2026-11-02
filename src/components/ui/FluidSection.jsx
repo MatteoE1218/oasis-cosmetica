@@ -2,12 +2,13 @@ import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useCartDispatch } from '../../stores/CartContext'
+import { useCatalog } from '../../stores/CatalogContext'
 import ProductViewer3D from '../3d/ProductViewer3D'
 import './FluidSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const shades = [
+const defaultShades = [
   { name: 'Porcelana Cristal 01', hex: '#f5e6d3', undertone: 'Neutro Frío' },
   { name: 'Marfil Radiante 02', hex: '#e8d5b7', undertone: 'Dorado Suave' },
   { name: 'Arena Cálida 03', hex: '#d4b896', undertone: 'Neutro Cálido' },
@@ -15,10 +16,6 @@ const shades = [
   { name: 'Espresso Ébano 05', hex: '#6b4226', undertone: 'Cálido Profundo' },
 ]
 
-/**
- * Sección 3 — Base Líquida / Sérum Éclat
- * Features in-section 3D showcase that smoothly slides in from the left on scroll.
- */
 export default function FluidSection() {
   const sectionRef = useRef(null)
   const contentRef = useRef(null)
@@ -26,6 +23,30 @@ export default function FluidSection() {
   const [selectedShade, setSelectedShade] = useState(0)
   const [addedAnimation, setAddedAnimation] = useState(false)
   const dispatch = useCartDispatch()
+  const { products, featuredSlots } = useCatalog()
+
+  const featuredProduct =
+    products.find((p) => String(p.id) === String(featuredSlots?.slot2Id)) ||
+    products[2] ||
+    products[0]
+
+  const shades =
+    Array.isArray(featuredProduct?.shades) && featuredProduct.shades.length > 0
+      ? featuredProduct.shades.map((s) => ({
+          name: s.name,
+          hex: s.hex,
+          undertone: featuredProduct.category || 'Acabado Luminoso',
+        }))
+      : defaultShades
+
+  const active = shades[selectedShade] || shades[0]
+  const displayName = featuredProduct?.name || 'Sérum Resplandor'
+  const displayTagline = featuredProduct?.tagline || 'Fluidez, Luz & Piel de Seda'
+  const displayDesc =
+    featuredProduct?.description ||
+    'Una base sérum de alta gama enriquecida con micro-gotas de ácido hialurónico vectorizado y perlas foto-reflectoras. Al posarse sobre la piel, crea un velo ingrávido e imperceptible que refracta la luz con acabado radiante de pasarela.'
+  const displayPrice = Number(featuredProduct?.price ?? 56.0)
+  const displayImage = featuredSlots?.slot2Use3D ? '' : featuredProduct?.image || ''
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -94,20 +115,19 @@ export default function FluidSection() {
     dispatch({
       type: 'ADD_ITEM',
       item: {
-        id: 3,
-        name: 'Sérum Resplandor',
-        price: 56.0,
-        shade: shades[selectedShade].name,
-        shadeHex: shades[selectedShade].hex,
-        icon: '✨',
+        id: featuredProduct?.id || 3,
+        name: displayName,
+        price: displayPrice,
+        shade: active.name,
+        shadeHex: active.hex,
+        icon: featuredProduct?.icon || '✨',
+        image: displayImage,
       },
     })
     setAddedAnimation(true)
     setTimeout(() => setAddedAnimation(false), 1200)
     dispatch({ type: 'SET_PANEL', isOpen: true })
   }
-
-  const active = shades[selectedShade]
 
   return (
     <section ref={sectionRef} className="fluid-section section" id="base-fluida">
@@ -117,7 +137,8 @@ export default function FluidSection() {
           <ProductViewer3D
             type="serum"
             color={active.hex}
-            badgeText="Sérum Resplandor • Vista en Vivo"
+            badgeText={`${displayName} • Vista en Vivo`}
+            imageUrl={displayImage}
           />
         </div>
 
@@ -125,19 +146,17 @@ export default function FluidSection() {
         <div ref={contentRef} className="fluid-content">
           <div className="fluid-tag">
             <span className="fluid-tag__dot" />
-            <span>Innovación en Tez • Cobertura Cristalina Luminosa</span>
+            <span>
+              {featuredProduct?.category || 'Innovación en Tez'} • {featuredProduct?.badge || 'Destacado'}
+            </span>
           </div>
 
           <h2 className="fluid-title">
-            Sérum Resplandor <br />
-            <span className="text-gradient">Fluidez, Luz & Piel de Seda</span>
+            {displayName} <br />
+            <span className="text-gradient">{displayTagline}</span>
           </h2>
 
-          <p className="fluid-desc">
-            Una base sérum de alta gama enriquecida con micro-gotas de ácido hialurónico 
-            vectorizado y perlas foto-reflectoras. Al posarse sobre la piel, crea un velo 
-            ingrávido e imperceptible que refracta la luz con acabado radiante de pasarela.
-          </p>
+          <p className="fluid-desc">{displayDesc}</p>
 
           {/* Feature Pills */}
           <div className="fluid-features">
@@ -198,10 +217,10 @@ export default function FluidSection() {
               id="fluid-add-btn"
             >
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
-              <span className="fluid-btn-price">• $56.00</span>
+              <span className="fluid-btn-price">• ${displayPrice.toFixed(2)}</span>
             </button>
             <a href="#compacto" className="btn btn-outline">
-              Siguiente: Polvo Resplandor
+              Siguiente Destacado
             </a>
           </div>
         </div>
