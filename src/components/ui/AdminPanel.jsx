@@ -431,8 +431,8 @@ export default function AdminPanel() {
               {syncStatus === 'cloud'
                 ? 'Supabase Conectado'
                 : syncStatus === 'syncing'
-                ? 'Sincronizando...'
-                : 'Guardado Local + Nube'}
+                  ? 'Sincronizando...'
+                  : 'Guardado Local + Nube'}
             </span>
 
             <button
@@ -635,13 +635,12 @@ export default function AdminPanel() {
                         <div className="admin-prod-card__meta">
                           <strong className="admin-prod-card__price">${Number(prod.price).toFixed(2)}</strong>
                           <span
-                            className={`admin-stock-badge ${
-                              prod.stock <= 0
+                            className={`admin-stock-badge ${prod.stock <= 0
                                 ? 'admin-stock-badge--out'
                                 : prod.stock <= 5
-                                ? 'admin-stock-badge--low'
-                                : ''
-                            }`}
+                                  ? 'admin-stock-badge--low'
+                                  : ''
+                              }`}
                           >
                             Stock: {prod.stock ?? 25} u.
                           </span>
@@ -1310,7 +1309,7 @@ export default function AdminPanel() {
                   <div className="admin-cloud-card">
                     <h3>☁️ Proyecto Supabase Vinculado</h3>
                     <p>
-                      Tu proyecto <code>sbhtmqctvaxtfzlzwndm</code> ya está conectado. Para terminar de activar la tabla <code>products</code> y el bucket de fotos en tu cuenta de Supabase, copia este bloque SQL y ejecútalo una sola vez en el <strong>SQL Editor</strong> de tu panel de Supabase:
+                      Tu proyecto <code>sbhtmqctxvaxtflzwndm</code> ya está conectado. Para terminar de activar la tabla <code>products</code> y el bucket de fotos en tu cuenta de Supabase, copia este bloque SQL y ejecútalo una sola vez en el <strong>SQL Editor</strong> de tu panel de Supabase:
                     </p>
 
                     <div className="admin-sql-box">

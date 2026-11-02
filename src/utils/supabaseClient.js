@@ -4,54 +4,39 @@
  * como con credenciales configuradas desde el Panel de Administrador.
  */
 
-const DEFAULT_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://sbhtmqctvaxtfzlzwndm.supabase.co'
-const DEFAULT_SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiaHRtcWN0eHZheHRmbHp3bmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM1NzY5MjcsImV4cCI6MjEwOTE1MjkyN30.fe3p9pfv_4blxgY2g_7sJDFkHb5EivLUn5z0gS-LFyc'
+const DEFAULT_SUPABASE_URL = 'https://sbhtmqctxvaxtflzwndm.supabase.co'
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_4pjeRjnSG0ACDxO6k6qbpg_N4-Gzgip'
 
-const CONFIG_STORAGE_KEY = 'oasis_supabase_config'
+const CONFIG_STORAGE_KEY = 'oasis_supabase_config_v2'
 const SESSION_STORAGE_KEY = 'oasis_supabase_session'
-
-function extractRefFromAnonKey(anonKey) {
-  try {
-    if (!anonKey || !anonKey.startsWith('eyJ')) return null
-    const payloadPart = anonKey.split('.')[1]
-    if (!payloadPart) return null
-    const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')))
-    return decoded.ref || null
-  } catch {
-    return null
-  }
-}
 
 export function getSupabaseConfig() {
   try {
     const raw = localStorage.getItem(CONFIG_STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (parsed.url && parsed.anonKey) return parsed
+      if (parsed.url && parsed.anonKey && !parsed.url.includes('sbhtmqctvaxtfzlzwndm')) {
+        return parsed
+      }
     }
   } catch {
     // ignore
   }
-  const refFromKey = extractRefFromAnonKey(DEFAULT_SUPABASE_ANON_KEY)
-  const autoUrl = refFromKey ? `https://${refFromKey}.supabase.co` : DEFAULT_SUPABASE_URL
   return {
-    url: autoUrl.replace(/\/$/, ''),
+    url: DEFAULT_SUPABASE_URL,
     anonKey: DEFAULT_SUPABASE_ANON_KEY,
   }
 }
 
 export function saveSupabaseConfig(url, anonKey) {
   const cleanKey = (anonKey || DEFAULT_SUPABASE_ANON_KEY).trim()
-  let cleanUrl = (url || '').trim().replace(/\/$/, '')
-  // Si el usuario pegó la URL completa del dashboard (ej. https://supabase.com/dashboard/project/xyz/...)
+  let cleanUrl = (url || DEFAULT_SUPABASE_URL).trim().replace(/\/$/, '')
+  if (cleanUrl.includes('sbhtmqctvaxtfzlzwndm')) {
+    cleanUrl = DEFAULT_SUPABASE_URL
+  }
   const dashMatch = cleanUrl.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i)
   if (dashMatch) {
     cleanUrl = `https://${dashMatch[1]}.supabase.co`
-  } else if (!cleanUrl) {
-    const ref = extractRefFromAnonKey(cleanKey)
-    cleanUrl = ref ? `https://${ref}.supabase.co` : DEFAULT_SUPABASE_URL
   }
   const clean = {
     url: cleanUrl,
@@ -212,19 +197,25 @@ export async function deleteProductFromSupabase(productId) {
 export async function uploadImageToSupabase(file) {
   const { url, anonKey } = getSupabaseConfig()
   const session = getSupabaseSession()
-  const token = session?.access_token || anonKey
+  const token = session?.access_token
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
   const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
   const bucket = 'catalog-images'
 
+  const uploadHeaders = {
+    apikey: anonKey,
+    'Content-Type': file.type || 'image/jpeg',
+    'x-upsert': 'true',
+  }
+  if (token) {
+    uploadHeaders.Authorization = `Bearer ${token}`
+  } else if (anonKey && anonKey.startsWith('eyJ')) {
+    uploadHeaders.Authorization = `Bearer ${anonKey}`
+  }
+
   const res = await fetch(`${url}/storage/v1/object/${bucket}/${safeName}`, {
     method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${token}`,
-      'Content-Type': file.type || 'image/jpeg',
-      'x-upsert': 'true',
-    },
+    headers: uploadHeaders,
     body: file,
   })
 
