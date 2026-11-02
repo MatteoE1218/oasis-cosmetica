@@ -415,6 +415,52 @@ export default function AdminPanel() {
     setTimeout(() => setCopiedSql(false), 3000)
   }
 
+  const getProductFeaturedSlot = (prodId) => {
+    const idStr = String(prodId)
+    if (String(featuredSlots?.slot1Id) === idStr) return 1
+    if (String(featuredSlots?.slot2Id) === idStr) return 2
+    if (String(featuredSlots?.slot3Id) === idStr) return 3
+    return 0
+  }
+
+  const handleToggleFeaturedInCatalog = (prod) => {
+    const currentSlot = getProductFeaturedSlot(prod.id)
+    if (currentSlot === 1) {
+      updateFeaturedSlots({ slot1Id: '' })
+      showToast(`Quitado "${prod.name}" de los destacados de inicio`)
+    } else if (currentSlot === 2) {
+      updateFeaturedSlots({ slot2Id: '' })
+      showToast(`Quitado "${prod.name}" de los destacados de inicio`)
+    } else if (currentSlot === 3) {
+      updateFeaturedSlots({ slot3Id: '' })
+      showToast(`Quitado "${prod.name}" de los destacados de inicio`)
+    } else {
+      // Buscar el primer espacio libre o rotar en el espacio 1, 2, 3
+      const existsSlot1 = products.some((p) => String(p.id) === String(featuredSlots?.slot1Id))
+      const existsSlot2 = products.some((p) => String(p.id) === String(featuredSlots?.slot2Id))
+      const existsSlot3 = products.some((p) => String(p.id) === String(featuredSlots?.slot3Id))
+
+      if (!featuredSlots?.slot1Id || !existsSlot1) {
+        updateFeaturedSlots({ slot1Id: String(prod.id) })
+        showToast(`⭐ "${prod.name}" fijado como Destacado #1 de Inicio`)
+      } else if (!featuredSlots?.slot2Id || !existsSlot2) {
+        updateFeaturedSlots({ slot2Id: String(prod.id) })
+        showToast(`⭐ "${prod.name}" fijado como Destacado #2 de Inicio`)
+      } else if (!featuredSlots?.slot3Id || !existsSlot3) {
+        updateFeaturedSlots({ slot3Id: String(prod.id) })
+        showToast(`⭐ "${prod.name}" fijado como Destacado #3 de Inicio`)
+      } else {
+        // Desplazar para poner este como el principal #1
+        updateFeaturedSlots({
+          slot1Id: String(prod.id),
+          slot2Id: featuredSlots.slot1Id,
+          slot3Id: featuredSlots.slot2Id,
+        })
+        showToast(`⭐ "${prod.name}" ahora se muestra como Destacado #1 al Inicio`)
+      }
+    }
+  }
+
   return (
     <div className="admin-overlay" role="dialog" aria-modal="true" aria-label="Panel de Administración Oasis">
       <div className="admin-modal">
@@ -548,13 +594,6 @@ export default function AdminPanel() {
               </button>
               <button
                 type="button"
-                className={`admin-tab ${activeTab === 'featured' ? 'admin-tab--active' : ''}`}
-                onClick={() => setActiveTab('featured')}
-              >
-                ⭐ Destacados de Inicio
-              </button>
-              <button
-                type="button"
                 className={`admin-tab ${activeTab === 'single' ? 'admin-tab--active' : ''}`}
                 onClick={() => {
                   setIsEditing(false)
@@ -586,7 +625,9 @@ export default function AdminPanel() {
                 <div className="admin-section__toolbar">
                   <div>
                     <h3>Productos Publicados ({products.length})</h3>
-                    <p>Edita precios, cantidades disponibles (stock), fotos o elimina productos en tiempo real.</p>
+                    <p>
+                      Edita precios, stock o fotos en tiempo real, y marca con <strong>⭐ Destacar en Inicio</strong> los productos que quieres mostrar en la portada principal.
+                    </p>
                   </div>
                   <div className="admin-toolbar-btns">
                     <button
@@ -614,193 +655,86 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="admin-inventory-grid">
-                  {products.map((prod) => (
-                    <div key={prod.id} className="admin-prod-card">
+                  {products.map((prod) => {
+                    const featuredSlotNum = getProductFeaturedSlot(prod.id)
+                    const isFeatured = featuredSlotNum > 0
+                    return (
                       <div
-                        className="admin-prod-card__thumb"
-                        style={{ background: prod.gradient }}
+                        key={prod.id}
+                        className={`admin-prod-card ${isFeatured ? 'admin-prod-card--featured' : ''}`}
                       >
-                        {prod.image ? (
-                          <img src={prod.image} alt={prod.name} />
-                        ) : (
-                          <span>{prod.icon}</span>
-                        )}
-                        <span className="admin-prod-card__cat">{prod.category}</span>
-                      </div>
+                        <div
+                          className="admin-prod-card__thumb"
+                          style={{ background: prod.gradient }}
+                        >
+                          {prod.image ? (
+                            <img src={prod.image} alt={prod.name} />
+                          ) : (
+                            <span>{prod.icon}</span>
+                          )}
+                          <span className="admin-prod-card__cat">{prod.category}</span>
 
-                      <div className="admin-prod-card__info">
-                        <h4>{prod.name}</h4>
-                        <p className="admin-prod-card__desc">{prod.tagline || prod.description}</p>
+                          <button
+                            type="button"
+                            className={`admin-star-btn ${isFeatured ? 'admin-star-btn--active' : ''}`}
+                            onClick={() => handleToggleFeaturedInCatalog(prod)}
+                            title={
+                              isFeatured
+                                ? `Mostrándose en Portada de Inicio (#${featuredSlotNum}). Clic para quitar.`
+                                : 'Clic para destacar este producto al inicio de la página'
+                            }
+                          >
+                            {isFeatured ? `⭐ En Inicio #${featuredSlotNum}` : '☆ Destacar en Inicio'}
+                          </button>
+                        </div>
 
-                        <div className="admin-prod-card__meta">
-                          <strong className="admin-prod-card__price">${Number(prod.price).toFixed(2)}</strong>
-                          <span
-                            className={`admin-stock-badge ${prod.stock <= 0
-                                ? 'admin-stock-badge--out'
-                                : prod.stock <= 5
+                        <div className="admin-prod-card__info">
+                          <h4>{prod.name}</h4>
+                          <p className="admin-prod-card__desc">{prod.tagline || prod.description}</p>
+
+                          <div className="admin-prod-card__meta">
+                            <strong className="admin-prod-card__price">${Number(prod.price).toFixed(2)}</strong>
+                            <span
+                              className={`admin-stock-badge ${
+                                prod.stock <= 0
+                                  ? 'admin-stock-badge--out'
+                                  : prod.stock <= 5
                                   ? 'admin-stock-badge--low'
                                   : ''
                               }`}
-                          >
-                            Stock: {prod.stock ?? 25} u.
-                          </span>
-                        </div>
-
-                        <div className="admin-prod-card__shades">
-                          {prod.shades?.map((s, idx) => (
-                            <span
-                              key={idx}
-                              className="admin-shade-dot"
-                              style={{ backgroundColor: s.hex }}
-                              title={s.name}
-                            />
-                          ))}
-                        </div>
-
-                        <div className="admin-prod-card__actions">
-                          <button
-                            type="button"
-                            className="admin-btn-edit"
-                            onClick={() => handleEditProduct(prod)}
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            type="button"
-                            className="admin-btn-delete"
-                            onClick={() => deleteProduct(prod.id)}
-                          >
-                            🗑️ Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── PESTAÑA DESTACADOS DE INICIO ── */}
-            {activeTab === 'featured' && (
-              <div className="admin-section">
-                <div className="admin-section__toolbar">
-                  <div>
-                    <h3>⭐ Productos Destacados en la Portada de Inicio</h3>
-                    <p>
-                      Elige cuáles de tus productos reales del catálogo aparecen en las 3 grandes secciones principales de inicio (con su nombre, descripción, tonos, precio y foto real o modelo 3D).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="admin-cloud-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-                  {[
-                    {
-                      slotKey: 'slot1Id',
-                      use3DKey: 'slot1Use3D',
-                      title: 'Destacado Principal #1 (Sección Labiales / Top)',
-                      desc: 'Aparece justo debajo de la portada principal.',
-                    },
-                    {
-                      slotKey: 'slot2Id',
-                      use3DKey: 'slot2Use3D',
-                      title: 'Destacado Principal #2 (Sección Central)',
-                      desc: 'Aparece en la segunda vitrina grande de inicio.',
-                    },
-                    {
-                      slotKey: 'slot3Id',
-                      use3DKey: 'slot3Use3D',
-                      title: 'Destacado Principal #3 (Sección Polvos / Paletas)',
-                      desc: 'Aparece en la tercera vitrina grande antes del catálogo.',
-                    },
-                  ].map((slot) => {
-                    const selectedProd =
-                      products.find((p) => String(p.id) === String(featuredSlots?.[slot.slotKey])) ||
-                      products[0]
-                    return (
-                      <div key={slot.slotKey} className="admin-cloud-card">
-                        <h4>{slot.title}</h4>
-                        <p style={{ fontSize: '0.8rem', color: '#6b5b63', marginBottom: '1rem' }}>
-                          {slot.desc}
-                        </p>
-
-                        <div className="admin-field">
-                          <label>Producto a mostrar en esta sección:</label>
-                          <select
-                            value={selectedProd?.id || ''}
-                            onChange={(e) => {
-                              updateFeaturedSlots({ [slot.slotKey]: e.target.value })
-                              showToast('✓ Producto destacado de inicio actualizado en vivo')
-                            }}
-                          >
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.icon} {p.name} — ${Number(p.price).toFixed(2)} ({p.category})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {selectedProd && (
-                          <div
-                            style={{
-                              marginTop: '1rem',
-                              padding: '0.85rem',
-                              borderRadius: '12px',
-                              background: '#fdf4f8',
-                              border: '1px solid rgba(247, 37, 133, 0.18)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.85rem',
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: '58px',
-                                height: '58px',
-                                borderRadius: '10px',
-                                background: selectedProd.gradient,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                overflow: 'hidden',
-                                flexShrink: 0,
-                              }}
                             >
-                              {selectedProd.image ? (
-                                <img
-                                  src={selectedProd.image}
-                                  alt={selectedProd.name}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                              ) : (
-                                <span style={{ fontSize: '1.6rem' }}>{selectedProd.icon}</span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '0.8rem' }}>
-                              <strong>{selectedProd.name}</strong>
-                              <div style={{ color: '#f72585', fontWeight: 700 }}>
-                                ${Number(selectedProd.price).toFixed(2)}
-                              </div>
-                              <div style={{ color: '#6b5b63' }}>
-                                {selectedProd.shades?.length || 1} tonos disponibles
-                              </div>
-                            </div>
+                              Stock: {prod.stock ?? 25} u.
+                            </span>
                           </div>
-                        )}
 
-                        <label className="admin-checkbox-label" style={{ marginTop: '0.9rem' }}>
-                          <input
-                            type="checkbox"
-                            checked={!featuredSlots?.[slot.use3DKey]}
-                            onChange={(e) => {
-                              updateFeaturedSlots({ [slot.use3DKey]: !e.target.checked })
-                              showToast('Preferencia visual actualizada')
-                            }}
-                          />
-                          <span>
-                            Mostrar la <strong>foto real subida</strong> del producto (si se desmarca, usa la escultura 3D interactiva)
-                          </span>
-                        </label>
+                          <div className="admin-prod-card__shades">
+                            {prod.shades?.map((s, idx) => (
+                              <span
+                                key={idx}
+                                className="admin-shade-dot"
+                                style={{ backgroundColor: s.hex }}
+                                title={s.name}
+                              />
+                            ))}
+                          </div>
+
+                          <div className="admin-prod-card__actions">
+                            <button
+                              type="button"
+                              className="admin-btn-edit"
+                              onClick={() => handleEditProduct(prod)}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn-delete"
+                              onClick={() => deleteProduct(prod.id)}
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )
                   })}
