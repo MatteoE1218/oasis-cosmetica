@@ -2,41 +2,18 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useCartDispatch } from '../../stores/CartContext'
-import { useCatalog } from '../../stores/CatalogContext'
+import { useCatalog, DEFAULT_PACK_TYPES } from '../../stores/CatalogContext'
 import './CustomBoxSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const boxStyles = [
-  {
-    id: 'box-rose',
-    name: 'Caja Regalo Oasis Pink',
-    desc: 'Lujoso estuche rígido en tono rubor suave con detalles fucsia y lazo de satén.',
-    color: '#FFE3EC',
-    borderColor: '#FF3399',
-    extraPrice: 8.0,
-  },
-  {
-    id: 'box-gold',
-    name: 'Caja Destello Magenta',
-    desc: 'Presentación insignia Oasis en tono suave con borde fucsia brillante.',
-    color: '#FFF0F5',
-    borderColor: '#F72585',
-    extraPrice: 12.0,
-  },
-  {
-    id: 'box-ivory',
-    name: 'Caja Minimalista Blanco Puro',
-    desc: 'Elegancia pura en estuche blanco luminoso con cinta fucsia de alta cosmética.',
-    color: '#FFFFFF',
-    borderColor: '#FFB6C1',
-    extraPrice: 6.0,
-  },
-]
-
 export default function CustomBoxSection() {
   const sectionRef = useRef(null)
-  const { products } = useCatalog()
+  const { products, packTypes } = useCatalog()
+
+  const activePackTypes =
+    Array.isArray(packTypes) && packTypes.length > 0 ? packTypes : DEFAULT_PACK_TYPES
+
   const selectableItems = useMemo(() => {
     const fromCatalog = products
       .filter((p) => p.includeInPack !== false && (p.stock === undefined || p.stock > 0))
@@ -51,14 +28,20 @@ export default function CustomBoxSection() {
       : [{ id: 1, name: 'Labial Eterno', price: 42.0, icon: '💄' }]
   }, [products])
 
-  const [selectedBox, setSelectedBox] = useState(boxStyles[0])
+  const [selectedBoxId, setSelectedBoxId] = useState(activePackTypes[0]?.id)
+  const selectedBox =
+    activePackTypes.find((b) => String(b.id) === String(selectedBoxId)) || activePackTypes[0]
+
+  const maxAllowed = Math.max(1, Number(selectedBox?.maxItems ?? 3))
+
   const [selectedProducts, setSelectedProducts] = useState(() =>
-    selectableItems.slice(0, 2).map((i) => i.id)
+    selectableItems.slice(0, Math.min(2, maxAllowed)).map((i) => i.id)
   )
   const [recipient, setRecipient] = useState('')
   const [sender, setSender] = useState('')
   const [message, setMessage] = useState('Que cada día brille con la luz y belleza que llevas dentro.')
   const [added, setAdded] = useState(false)
+  const [limitNotice, setLimitNotice] = useState('')
   const dispatch = useCartDispatch()
 
   useEffect(() => {
@@ -101,21 +84,38 @@ export default function CustomBoxSection() {
     return () => ctx.revert()
   }, [])
 
+  const handleSelectBox = (box) => {
+    setSelectedBoxId(box.id)
+    setLimitNotice('')
+    const newMax = Math.max(1, Number(box.maxItems ?? 3))
+    if (selectedProducts.length > newMax) {
+      setSelectedProducts((prev) => prev.slice(0, newMax))
+    }
+  }
+
   const toggleProduct = (id) => {
+    setLimitNotice('')
     if (selectedProducts.includes(id)) {
       if (selectedProducts.length === 1) return // al menos 1 producto
       setSelectedProducts(selectedProducts.filter((p) => p !== id))
     } else {
+      if (selectedProducts.length >= maxAllowed) {
+        setLimitNotice(`Este pack incluye hasta ${maxAllowed} producto(s). Desmarca uno para cambiarlo o elige un pack más grande.`)
+        return
+      }
       setSelectedProducts([...selectedProducts, id])
     }
   }
 
   const calculateTotal = () => {
+    if (Number(selectedBox?.fixedPrice) > 0) {
+      return Number(selectedBox.fixedPrice)
+    }
     const productsSum = selectedProducts.reduce((acc, id) => {
       const p = selectableItems.find((item) => item.id === id)
       return acc + (p ? p.price : 0)
     }, 0)
-    return productsSum + selectedBox.extraPrice
+    return productsSum + Number(selectedBox?.extraPrice || 0)
   }
 
   const handleAddPackToCart = () => {
@@ -135,7 +135,7 @@ export default function CustomBoxSection() {
         name: `Pack de Regalo (${selectedBox.name})`,
         price: total,
         shade: `${selectedProducts.length} cosméticos • Para: ${cleanRecipient}${cleanSender ? ` | De: ${cleanSender}` : ''}`,
-        shadeHex: selectedBox.borderColor,
+        shadeHex: selectedBox.borderColor || '#FF3399',
         icon: '🎁',
         isPack: true,
         boxName: selectedBox.name,
@@ -165,9 +165,7 @@ export default function CustomBoxSection() {
             <span className="text-gradient">con Mensaje Personalizado</span>
           </h2>
           <p className="section-subtitle">
-            Crea una experiencia inolvidable. Elige tus cosméticos favoritos, 
-            el estilo de caja que más te guste y nosotros incluiremos una tarjeta 
-            artesanal con tu dedicatoria personalizada impresa con tinta dorada.
+            Crea una experiencia inolvidable. Elige el tipo de pack o combo, selecciona tus cosméticos favoritos y nosotros incluiremos una tarjeta artesanal con tu dedicatoria personalizada.
           </p>
         </div>
 
@@ -175,34 +173,43 @@ export default function CustomBoxSection() {
         <div className="custom-box__grid">
           {/* Columna Izquierda: Configuración del Pack */}
           <div className="custom-box__config glass">
-            {/* Paso 1: Estilo de Caja */}
+            {/* Paso 1: Estilo de Caja / Tipo de Pack */}
             <div className="custom-box__step">
               <div className="custom-box__step-header">
                 <span className="custom-box__step-num">1</span>
                 <div>
-                  <h3 className="custom-box__step-title">Elige el estilo de tu caja</h3>
-                  <p className="custom-box__step-sub">Empaque para regalo con lazo satinado</p>
+                  <h3 className="custom-box__step-title">Elige tu tipo de Pack o Combo</h3>
+                  <p className="custom-box__step-sub">Cada pack indica su precio y cuántos productos incluye</p>
                 </div>
               </div>
 
               <div className="custom-box__options">
-                {boxStyles.map((box) => (
-                  <button
-                    key={box.id}
-                    className={`custom-box__option-btn ${selectedBox.id === box.id ? 'custom-box__option-btn--active' : ''}`}
-                    onClick={() => setSelectedBox(box)}
-                    type="button"
-                  >
-                    <span 
-                      className="custom-box__color-sample" 
-                      style={{ backgroundColor: box.color, borderColor: box.borderColor }}
-                    />
-                    <div className="custom-box__option-info">
-                      <strong>{box.name}</strong>
-                      <span>+${box.extraPrice.toFixed(2)}</span>
-                    </div>
-                  </button>
-                ))}
+                {activePackTypes.map((box) => {
+                  const isFixed = Number(box.fixedPrice) > 0
+                  const maxItemsNum = Math.max(1, Number(box.maxItems ?? 3))
+                  return (
+                    <button
+                      key={box.id}
+                      className={`custom-box__option-btn ${selectedBox.id === box.id ? 'custom-box__option-btn--active' : ''}`}
+                      onClick={() => handleSelectBox(box)}
+                      type="button"
+                    >
+                      <span
+                        className="custom-box__color-sample"
+                        style={{ backgroundColor: box.color || '#FFE3EC', borderColor: box.borderColor || '#FF3399' }}
+                      />
+                      <div className="custom-box__option-info">
+                        <strong>{box.name}</strong>
+                        <span>
+                          {isFixed
+                            ? `Combo $${Number(box.fixedPrice).toFixed(2)}`
+                            : `+$${Number(box.extraPrice || 0).toFixed(2)}`}{' '}
+                          • Hasta {maxItemsNum} prod.
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -211,17 +218,37 @@ export default function CustomBoxSection() {
               <div className="custom-box__step-header">
                 <span className="custom-box__step-num">2</span>
                 <div>
-                  <h3 className="custom-box__step-title">Selecciona los cosméticos a incluir</h3>
-                  <p className="custom-box__step-sub">Mínimo 1 producto para armar tu pack</p>
+                  <h3 className="custom-box__step-title">
+                    Selecciona los cosméticos ({selectedProducts.length} de {maxAllowed})
+                  </h3>
+                  <p className="custom-box__step-sub">
+                    Tu <strong>{selectedBox.name}</strong> permite elegir hasta <strong>{maxAllowed} producto(s)</strong>
+                  </p>
                 </div>
               </div>
+
+              {limitNotice && (
+                <p
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#d91e75',
+                    background: '#fff0f6',
+                    padding: '0.55rem 0.85rem',
+                    borderRadius: '10px',
+                    marginBottom: '0.75rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  ✦ {limitNotice}
+                </p>
+              )}
 
               <div className="custom-box__items-list">
                 {selectableItems.map((item) => {
                   const isChecked = selectedProducts.includes(item.id)
                   return (
-                    <label 
-                      key={item.id} 
+                    <label
+                      key={item.id}
                       className={`custom-box__item-label ${isChecked ? 'custom-box__item-label--checked' : ''}`}
                     >
                       <input
@@ -232,7 +259,9 @@ export default function CustomBoxSection() {
                       />
                       <span className="custom-box__item-icon">{item.icon}</span>
                       <span className="custom-box__item-name">{item.name}</span>
-                      <span className="custom-box__item-price">${item.price.toFixed(2)}</span>
+                      <span className="custom-box__item-price">
+                        {Number(selectedBox.fixedPrice) > 0 ? 'Incluido' : `$${item.price.toFixed(2)}`}
+                      </span>
                     </label>
                   )
                 })}
@@ -295,14 +324,14 @@ export default function CustomBoxSection() {
           <div className="custom-box__preview-column">
             <div className="custom-box__card-preview">
               <div className="custom-box__card-ribbon">◆ OASIS REGALOS ◆</div>
-              
+
               <div className="custom-box__card-inner">
                 <p className="custom-box__preview-to">
                   Para: <span>{recipient || 'Alguien Muy Especial'}</span>
                 </p>
 
                 <p className="custom-box__preview-text">
-                  “{message || 'Escribe tu dedicatoria...' }”
+                  “{message || 'Escribe tu dedicatoria...'}”
                 </p>
 
                 <p className="custom-box__preview-from">
@@ -319,20 +348,33 @@ export default function CustomBoxSection() {
             <div className="custom-box__summary glass">
               <div className="custom-box__summary-header">
                 <h4>Resumen de tu Pack</h4>
-                <span className="custom-box__summary-badge">{selectedBox.name}</span>
+                <span className="custom-box__summary-badge">
+                  {selectedBox.name} ({selectedProducts.length}/{maxAllowed} prod.)
+                </span>
               </div>
 
               <ul className="custom-box__summary-list">
-                <li>
-                  <span>Empaque de regalo</span>
-                  <span>${selectedBox.extraPrice.toFixed(2)}</span>
-                </li>
+                {Number(selectedBox.fixedPrice) > 0 ? (
+                  <li>
+                    <span>Precio del Combo ({selectedBox.name})</span>
+                    <span>${Number(selectedBox.fixedPrice).toFixed(2)}</span>
+                  </li>
+                ) : (
+                  <li>
+                    <span>Empaque de regalo ({selectedBox.name})</span>
+                    <span>${Number(selectedBox.extraPrice || 0).toFixed(2)}</span>
+                  </li>
+                )}
                 {selectedProducts.map((id) => {
                   const p = selectableItems.find((item) => item.id === id)
                   return (
                     <li key={id}>
                       <span>{p?.name}</span>
-                      <span>${p?.price.toFixed(2)}</span>
+                      <span>
+                        {Number(selectedBox.fixedPrice) > 0
+                          ? 'Incluido'
+                          : `$${(p?.price || 0).toFixed(2)}`}
+                      </span>
                     </li>
                   )
                 })}

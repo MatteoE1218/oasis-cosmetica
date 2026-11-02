@@ -37,12 +37,26 @@ const EMPTY_PRODUCT = {
   ],
 }
 
+const EMPTY_PACK = {
+  id: '',
+  name: '',
+  desc: '',
+  color: '#FFE3EC',
+  borderColor: '#FF3399',
+  extraPrice: 8.0,
+  fixedPrice: 0,
+  maxItems: 3,
+}
+
 export default function AdminPanel() {
   const {
     products,
     categories,
     featuredSlots,
     updateFeaturedSlots,
+    packTypes,
+    addOrUpdatePackType,
+    deletePackType,
     isAdminOpen,
     closeAdminPanel,
     isAdminAuthenticated,
@@ -82,6 +96,10 @@ export default function AdminPanel() {
   const [bulkPreview, setBulkPreview] = useState([])
   const [isProcessingBulk, setIsProcessingBulk] = useState(false)
   const [replaceExistingOnBulk, setReplaceExistingOnBulk] = useState(false)
+
+  // Pack / Combo Form States
+  const [packForm, setPackForm] = useState(EMPTY_PACK)
+  const [isEditingPack, setIsEditingPack] = useState(false)
 
   // Cloud Config States
   const currentSbConfig = getSupabaseConfig()
@@ -609,6 +627,17 @@ export default function AdminPanel() {
                 onClick={() => setActiveTab('bulk')}
               >
                 ⚡ Subida Masiva Inteligente
+              </button>
+              <button
+                type="button"
+                className={`admin-tab ${activeTab === 'packs' ? 'admin-tab--active' : ''}`}
+                onClick={() => {
+                  setIsEditingPack(false)
+                  setPackForm(EMPTY_PACK)
+                  setActiveTab('packs')
+                }}
+              >
+                🎁 Packs y Combos ({packTypes?.length || 0})
               </button>
               <button
                 type="button"
@@ -1233,6 +1262,240 @@ export default function AdminPanel() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── PESTAÑA PACKS Y COMBOS PERSONALIZADOS ── */}
+            {activeTab === 'packs' && (
+              <div className="admin-section">
+                <div className="admin-section__toolbar">
+                  <div>
+                    <h3>🎁 Administrar Tipos de Packs y Combos de Regalo</h3>
+                    <p>
+                      Configura los tipos de cajas o combos disponibles, cuántos cosméticos puede elegir el cliente en cada uno y su precio (costo de caja o precio fijo de combo).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="admin-cloud-grid">
+                  {/* Formulario para crear / editar tipo de Pack */}
+                  <div className="admin-cloud-card">
+                    <h4>{isEditingPack ? `✏️ Editando: ${packForm.name}` : '➕ Crear Nuevo Tipo de Pack / Combo'}</h4>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        if (!packForm.name.trim()) {
+                          showToast('Escribe el nombre del Pack o Combo')
+                          return
+                        }
+                        addOrUpdatePackType(packForm)
+                        showToast(
+                          isEditingPack
+                            ? '✓ Pack actualizado en vivo'
+                            : '✓ Nuevo Pack agregado a la tienda'
+                        )
+                        setPackForm(EMPTY_PACK)
+                        setIsEditingPack(false)
+                      }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginTop: '1rem' }}
+                    >
+                      <div className="admin-field">
+                        <label>Nombre del Pack / Caja / Combo *</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Pack Dúo Amor / Caja Oasis Pink"
+                          value={packForm.name}
+                          onChange={(e) => setPackForm({ ...packForm, name: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="admin-field">
+                        <label>Descripción corta del empaque</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Estuche rígido con lazo satinado y tarjeta impresa"
+                          value={packForm.desc}
+                          onChange={(e) => setPackForm({ ...packForm, desc: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="admin-field-row">
+                        <div className="admin-field">
+                          <label>¿Cuántos productos lleva? *</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={packForm.maxItems}
+                            onChange={(e) =>
+                              setPackForm({ ...packForm, maxItems: parseInt(e.target.value, 10) || 1 })
+                            }
+                            required
+                          />
+                        </div>
+
+                        <div className="admin-field">
+                          <label>Precio de la Caja (+$ USD)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={packForm.extraPrice}
+                            onChange={(e) => setPackForm({ ...packForm, extraPrice: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="admin-field">
+                          <label>O Precio Fijo Combo ($ USD)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0 = sumar productos"
+                            value={packForm.fixedPrice}
+                            onChange={(e) => setPackForm({ ...packForm, fixedPrice: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <small style={{ color: '#6b5b63', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                        💡 <strong>Nota sobre precios:</strong> Si dejas <em>Precio Fijo Combo</em> en <strong>0</strong>, el sistema cobrará la suma de los cosméticos elegidos + el <em>Precio de la Caja</em>. Si pones un valor mayor a 0 en <em>Precio Fijo Combo</em> (ej. $45.00), ese será el precio total cerrado del combo sin importar qué productos elija.
+                      </small>
+
+                      <div className="admin-field-row">
+                        <div className="admin-field">
+                          <label>Color de Fondo Muestra</label>
+                          <input
+                            type="color"
+                            value={packForm.color}
+                            onChange={(e) => setPackForm({ ...packForm, color: e.target.value })}
+                            className="admin-color-picker"
+                          />
+                        </div>
+                        <div className="admin-field">
+                          <label>Color del Borde / Cinta</label>
+                          <input
+                            type="color"
+                            value={packForm.borderColor}
+                            onChange={(e) => setPackForm({ ...packForm, borderColor: e.target.value })}
+                            className="admin-color-picker"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="admin-toolbar-btns" style={{ marginTop: '0.5rem' }}>
+                        {isEditingPack && (
+                          <button
+                            type="button"
+                            className="admin-btn-outline"
+                            onClick={() => {
+                              setIsEditingPack(false)
+                              setPackForm(EMPTY_PACK)
+                            }}
+                          >
+                            Cancelar Edición
+                          </button>
+                        )}
+                        <button type="submit" className="admin-btn-primary">
+                          {isEditingPack ? '💾 Guardar Cambios del Pack' : '➕ Agregar Tipo de Pack'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Lista de Packs actuales */}
+                  <div className="admin-cloud-card">
+                    <h4>📦 Tipos de Packs Activos ({packTypes?.length || 0})</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '1rem' }}>
+                      {packTypes?.map((box) => {
+                        const isFixed = Number(box.fixedPrice) > 0
+                        return (
+                          <div
+                            key={box.id}
+                            style={{
+                              padding: '1.1rem',
+                              borderRadius: '16px',
+                              border: '1px solid rgba(247, 37, 133, 0.18)',
+                              background: '#fffafd',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '1rem',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+                              <span
+                                style={{
+                                  width: '38px',
+                                  height: '38px',
+                                  borderRadius: '50%',
+                                  backgroundColor: box.color || '#FFE3EC',
+                                  border: `3px solid ${box.borderColor || '#FF3399'}`,
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <div>
+                                <strong style={{ fontSize: '1rem', display: 'block' }}>{box.name}</strong>
+                                <span style={{ fontSize: '0.82rem', color: '#6b5b63', display: 'block' }}>
+                                  {box.desc}
+                                </span>
+                                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
+                                  <span className="admin-stock-badge">
+                                    Lleva hasta {box.maxItems ?? 3} producto(s)
+                                  </span>
+                                  <span
+                                    className="admin-stock-badge"
+                                    style={{ background: '#fce7f3', color: '#be185d' }}
+                                  >
+                                    {isFixed
+                                      ? `Precio Fijo Combo: $${Number(box.fixedPrice).toFixed(2)}`
+                                      : `Caja +$${Number(box.extraPrice || 0).toFixed(2)} (más productos)`}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                type="button"
+                                className="admin-btn-edit"
+                                onClick={() => {
+                                  setPackForm({
+                                    id: box.id,
+                                    name: box.name,
+                                    desc: box.desc || '',
+                                    color: box.color || '#FFE3EC',
+                                    borderColor: box.borderColor || '#FF3399',
+                                    extraPrice: box.extraPrice ?? 8,
+                                    fixedPrice: box.fixedPrice ?? 0,
+                                    maxItems: box.maxItems ?? 3,
+                                  })
+                                  setIsEditingPack(true)
+                                }}
+                              >
+                                ✏️ Editar
+                              </button>
+                              {packTypes.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="admin-btn-delete"
+                                  onClick={() => {
+                                    deletePackType(box.id)
+                                    showToast('Tipo de pack eliminado')
+                                  }}
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

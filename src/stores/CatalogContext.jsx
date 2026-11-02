@@ -11,8 +11,42 @@ const CatalogContext = createContext(null)
 
 const LOCAL_CATALOG_KEY = 'oasis_catalog_products_v1'
 const FEATURED_SLOTS_KEY = 'oasis_featured_slots_v1'
+const PACK_TYPES_KEY = 'oasis_pack_types_v1'
 const ADMIN_PIN_KEY = 'oasis_admin_pin_v1'
 const DEFAULT_ADMIN_PIN = 'oasis2026'
+
+export const DEFAULT_PACK_TYPES = [
+  {
+    id: 'box-rose',
+    name: 'Caja Regalo Oasis Pink',
+    desc: 'Lujoso estuche rígido en tono rubor suave con detalles fucsia y lazo de satén.',
+    color: '#FFE3EC',
+    borderColor: '#FF3399',
+    extraPrice: 8.0,
+    fixedPrice: 0, // 0 = suma los productos + extraPrice; > 0 = precio fijo del combo completo
+    maxItems: 3, // Cantidad de cosméticos que lleva este pack/combo
+  },
+  {
+    id: 'box-gold',
+    name: 'Caja Destello Magenta',
+    desc: 'Presentación insignia Oasis en tono suave con borde fucsia brillante.',
+    color: '#FFF0F5',
+    borderColor: '#F72585',
+    extraPrice: 12.0,
+    fixedPrice: 0,
+    maxItems: 5,
+  },
+  {
+    id: 'box-ivory',
+    name: 'Caja Minimalista Blanco Puro',
+    desc: 'Elegancia pura en estuche blanco luminoso con cinta fucsia de alta cosmética.',
+    color: '#FFFFFF',
+    borderColor: '#FFB6C1',
+    extraPrice: 6.0,
+    fixedPrice: 0,
+    maxItems: 2,
+  },
+]
 
 const DEFAULT_FEATURED_SLOTS = {
   slot1Id: '1', // Sección Destacada 1 (Labial / Producto Estrella 1)
@@ -85,6 +119,59 @@ export function CatalogProvider({ children }) {
       return merged
     })
   }, [])
+
+  const [packTypes, setPackTypes] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PACK_TYPES_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_PACK_TYPES
+  })
+
+  const savePackTypes = useCallback((nextPacks) => {
+    setPackTypes(nextPacks)
+    try {
+      localStorage.setItem(PACK_TYPES_KEY, JSON.stringify(nextPacks))
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const addOrUpdatePackType = useCallback(
+    (packData) => {
+      const clean = {
+        id: packData.id || `pack-type-${Date.now()}`,
+        name: packData.name?.trim() || 'Nuevo Pack Oasis',
+        desc: packData.desc?.trim() || 'Empaque especial con tarjeta personalizada.',
+        color: packData.color || '#FFE3EC',
+        borderColor: packData.borderColor || '#FF3399',
+        extraPrice: Number(packData.extraPrice ?? 8),
+        fixedPrice: Number(packData.fixedPrice ?? 0),
+        maxItems: Math.max(1, parseInt(packData.maxItems, 10) || 3),
+      }
+      const exists = packTypes.some((p) => String(p.id) === String(clean.id))
+      const next = exists
+        ? packTypes.map((p) => (String(p.id) === String(clean.id) ? clean : p))
+        : [...packTypes, clean]
+      savePackTypes(next)
+      return clean
+    },
+    [packTypes, savePackTypes]
+  )
+
+  const deletePackType = useCallback(
+    (packId) => {
+      if (packTypes.length <= 1) return // mantener al menos 1 tipo de pack
+      const next = packTypes.filter((p) => String(p.id) !== String(packId))
+      savePackTypes(next)
+    },
+    [packTypes, savePackTypes]
+  )
 
   const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
@@ -267,6 +354,9 @@ export function CatalogProvider({ children }) {
       categories,
       featuredSlots,
       updateFeaturedSlots,
+      packTypes,
+      addOrUpdatePackType,
+      deletePackType,
       isAdminOpen,
       setIsAdminOpen,
       closeAdminPanel,
@@ -287,6 +377,9 @@ export function CatalogProvider({ children }) {
       categories,
       featuredSlots,
       updateFeaturedSlots,
+      packTypes,
+      addOrUpdatePackType,
+      deletePackType,
       isAdminOpen,
       closeAdminPanel,
       isAdminAuthenticated,
