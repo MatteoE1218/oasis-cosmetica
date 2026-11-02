@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { products } from '../../data/products'
+import { useCatalog } from '../../stores/CatalogContext'
 import { useCartDispatch } from '../../stores/CartContext'
 import useTiltEffect from '../../hooks/useTiltEffect'
 import scrollState from '../../stores/scrollStore'
@@ -9,29 +9,44 @@ import './ProductCatalog.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const categories = ['Todos', 'Labiales', 'Base', 'Sombras', 'Rubor', 'Máscara']
-
 /* ── Individual Product Card ── */
 function ProductCard({ product }) {
   const cardRef = useRef(null)
   const [selectedShade, setSelectedShade] = useState(product.defaultShade || 0)
+  const [activeImgIdx, setActiveImgIdx] = useState(0)
   const [added, setAdded] = useState(false)
   const dispatch = useCartDispatch()
 
   useTiltEffect(cardRef, { maxTilt: 8, scale: 1.02 })
 
-  const shade = product.shades[selectedShade] || product.shades[0]
+  const shades = Array.isArray(product.shades) && product.shades.length > 0
+    ? product.shades
+    : [{ name: 'Tono Único', hex: '#d4637a' }]
+  const shade = shades[selectedShade] || shades[0]
+  const stock = product.stock !== undefined && product.stock !== null ? Number(product.stock) : 25
+  const isOutOfStock = stock <= 0
+
+  const gallery =
+    Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product.image
+      ? [product.image]
+      : []
+
+  const currentImage = gallery[activeImgIdx] || gallery[0] || ''
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return
     dispatch({
       type: 'ADD_ITEM',
       item: {
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: Number(product.price),
         shade: shade.name,
         shadeHex: shade.hex,
-        icon: product.icon,
+        icon: product.icon || '💄',
+        image: currentImage,
       },
     })
     setAdded(true)
@@ -48,32 +63,71 @@ function ProductCard({ product }) {
         <span className="product-card__badge">{product.badge}</span>
       )}
 
-      {/* Product visual — Editorial CSS Art Container */}
+      {/* Product visual — Foto Real o Contenedor Editorial */}
       <div
-        className="product-card__visual"
+        className={`product-card__visual ${currentImage ? 'product-card__visual--photo' : ''}`}
         style={{ background: product.gradient }}
       >
-        <span className="product-card__icon">{product.icon}</span>
+        {currentImage ? (
+          <img
+            src={currentImage}
+            alt={product.name}
+            className="product-card__photo"
+            loading="lazy"
+          />
+        ) : (
+          <span className="product-card__icon">{product.icon}</span>
+        )}
         <div className="product-card__shine" aria-hidden="true" />
+
+        {gallery.length > 1 && (
+          <div className="product-card__dots">
+            {gallery.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`product-card__dot ${idx === activeImgIdx ? 'active' : ''}`}
+                onClick={() => setActiveImgIdx(idx)}
+                aria-label={`Ver foto ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Info */}
       <div className="product-card__body">
         <div className="product-card__meta">
           <span className="product-card__category">{product.category}</span>
-          <span className="product-card__rating">★ 4.9</span>
+          <span
+            className={`product-card__stock ${
+              isOutOfStock
+                ? 'product-card__stock--out'
+                : stock <= 5
+                ? 'product-card__stock--low'
+                : ''
+            }`}
+          >
+            {isOutOfStock
+              ? 'Agotado'
+              : stock <= 5
+              ? `¡Solo ${stock} disp.!`
+              : `${stock} disponibles`}
+          </span>
         </div>
 
         <h3 className="product-card__name">{product.name}</h3>
-        <p className="product-card__tagline">{product.tagline}</p>
+        <p className="product-card__tagline">
+          {product.description || product.tagline}
+        </p>
 
         {/* Shade selector */}
         <div className="product-card__shades-wrapper">
-          <span className="product-card__shade-name">{shade.name}</span>
+          <span className="product-card__shade-name">Tono: {shade.name}</span>
           <div className="product-card__shades" role="radiogroup" aria-label="Seleccionar tono">
-            {product.shades.map((s, i) => (
+            {shades.map((s, i) => (
               <button
-                key={s.name}
+                key={`${s.name}-${i}`}
                 className={`product-card__shade ${i === selectedShade ? 'product-card__shade--active' : ''}`}
                 style={{ '--shade': s.hex }}
                 onClick={() => setSelectedShade(i)}
@@ -89,16 +143,21 @@ function ProductCard({ product }) {
         <div className="product-card__footer">
           <div className="product-card__price-box">
             <span className="product-card__price-label">Precio</span>
-            <span className="product-card__price">${product.price.toFixed(2)}</span>
+            <span className="product-card__price">${Number(product.price).toFixed(2)}</span>
           </div>
 
           <button
-            className={`product-card__add-btn ${added ? 'product-card__add-btn--added' : ''}`}
+            className={`product-card__add-btn ${added ? 'product-card__add-btn--added' : ''} ${
+              isOutOfStock ? 'product-card__add-btn--disabled' : ''
+            }`}
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             aria-label={`Añadir ${product.name} en tono ${shade.name} al carrito`}
             id={`add-to-cart-${product.id}`}
           >
-            {added ? (
+            {isOutOfStock ? (
+              <span>Agotado</span>
+            ) : added ? (
               <span>✓ Añadido</span>
             ) : (
               <>
@@ -120,12 +179,12 @@ function ProductCard({ product }) {
 export default function ProductCatalog() {
   const sectionRef = useRef(null)
   const cardsContainerRef = useRef(null)
+  const { products, categories } = useCatalog()
   const [activeCategory, setActiveCategory] = useState('Todos')
 
   useEffect(() => {
     if (!sectionRef.current) return
     const ctx = gsap.context(() => {
-      // Direct section scroll tracking
       ScrollTrigger.create({
         trigger: sectionRef.current,
         start: 'top bottom',
@@ -136,7 +195,6 @@ export default function ProductCatalog() {
         },
       })
 
-      // Title reveal
       gsap.fromTo(
         '.catalog__title',
         { y: 40, opacity: 0 },
@@ -148,24 +206,6 @@ export default function ProductCatalog() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
-        }
-      )
-
-      // Cards stagger entrance
-      gsap.fromTo(
-        '.product-card',
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.1,
-          duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: cardsContainerRef.current,
-            start: 'top 85%',
             toggleActions: 'play none none reverse',
           },
         }
@@ -218,4 +258,3 @@ export default function ProductCatalog() {
     </section>
   )
 }
-

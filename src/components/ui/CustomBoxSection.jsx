@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useCartDispatch } from '../../stores/CartContext'
+import { useCatalog } from '../../stores/CatalogContext'
 import './CustomBoxSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -33,18 +34,27 @@ const boxStyles = [
   },
 ]
 
-const selectableItems = [
-  { id: 101, name: 'Labial Eterno (Tono a elección)', price: 42.0, icon: '💄' },
-  { id: 102, name: 'Sérum Resplandor (Base)', price: 56.0, icon: '✨' },
-  { id: 103, name: 'Polvo Resplandor con Espejo', price: 68.0, icon: '🪞' },
-  { id: 104, name: 'Rubor Terciopelo Suave', price: 34.0, icon: '🌸' },
-  { id: 105, name: 'Brillo Labial Cristalino', price: 28.0, icon: '💎' },
-]
-
 export default function CustomBoxSection() {
   const sectionRef = useRef(null)
+  const { products } = useCatalog()
+  const selectableItems = useMemo(() => {
+    const fromCatalog = products
+      .filter((p) => p.includeInPack !== false && (p.stock === undefined || p.stock > 0))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        icon: p.icon || '💄',
+      }))
+    return fromCatalog.length > 0
+      ? fromCatalog
+      : [{ id: 1, name: 'Labial Eterno', price: 42.0, icon: '💄' }]
+  }, [products])
+
   const [selectedBox, setSelectedBox] = useState(boxStyles[0])
-  const [selectedProducts, setSelectedProducts] = useState([101, 102])
+  const [selectedProducts, setSelectedProducts] = useState(() =>
+    selectableItems.slice(0, 2).map((i) => i.id)
+  )
   const [recipient, setRecipient] = useState('')
   const [sender, setSender] = useState('')
   const [message, setMessage] = useState('Que cada día brille con la luz y belleza que llevas dentro.')

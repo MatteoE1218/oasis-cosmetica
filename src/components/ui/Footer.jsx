@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useCatalog } from '../../stores/CatalogContext'
 import './Footer.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -13,6 +14,24 @@ export const SOCIAL_LINKS = {
 
 export default function Footer() {
   const footerRef = useRef(null)
+  const secretClickCountRef = useRef(0)
+  const secretClickTimerRef = useRef(null)
+  const { setIsAdminOpen } = useCatalog()
+
+  const handleSecretAdminClick = () => {
+    secretClickCountRef.current += 1
+    if (secretClickTimerRef.current) {
+      clearTimeout(secretClickTimerRef.current)
+    }
+    if (secretClickCountRef.current >= 5) {
+      secretClickCountRef.current = 0
+      setIsAdminOpen(true)
+    } else {
+      secretClickTimerRef.current = setTimeout(() => {
+        secretClickCountRef.current = 0
+      }, 2000)
+    }
+  }
 
   useEffect(() => {
     if (!footerRef.current) return
@@ -43,7 +62,11 @@ export default function Footer() {
       <div className="container footer__inner">
         {/* Brand */}
         <div className="footer__brand">
-          <div className="footer__logo-wrap">
+          <div
+            className="footer__logo-wrap"
+            onClick={handleSecretAdminClick}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+          >
             <img src="/oasis-logo.png" alt="Oasis Makeup" className="footer__logo-icon" width="34" height="34" />
             <span className="footer__logo">OASIS MAKEUP</span>
           </div>

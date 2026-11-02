@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CartProvider } from './stores/CartContext'
+import { CatalogProvider } from './stores/CatalogContext'
 import AtmosphereBackground from './components/ui/AtmosphereBackground'
 import Navbar from './components/ui/Navbar'
 import HeroSection from './components/ui/HeroSection'
@@ -14,6 +15,7 @@ import Footer from './components/ui/Footer'
 import CartPanel from './components/ui/CartPanel'
 import Loader from './components/ui/Loader'
 import WhatsAppButton from './components/ui/WhatsAppButton'
+import AdminPanel from './components/ui/AdminPanel'
 import './App.css'
 
 /**
@@ -30,54 +32,59 @@ export default function App() {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <CartProvider>
-      <div className="app">
-        {/* Preloader editorial */}
-        <Loader onComplete={() => setLoaded(true)} />
+    <CatalogProvider>
+      <CartProvider>
+        <div className="app">
+          {/* Preloader editorial */}
+          <Loader onComplete={() => setLoaded(true)} />
 
-        {/* Dynamic atmospheric background morphing with scroll */}
-        <AtmosphereBackground />
+          {/* Dynamic atmospheric background morphing with scroll */}
+          <AtmosphereBackground />
 
-        {/* HTML overlay content */}
-        <div className="overlay-content">
-          <Navbar />
+          {/* HTML overlay content */}
+          <div className="overlay-content">
+            <Navbar />
 
-          <main id="main-content">
-            {/* Sección 1: Hero — Presentación principal con iluminación cálida */}
-            <HeroSection />
+            <main id="main-content">
+              {/* Sección 1: Hero — Presentación principal con iluminación cálida */}
+              <HeroSection />
 
-            {/* Sección 2: Pintalabios — Labial 3D rotando y abriéndose con el scroll (#F8EAE8) */}
-            <LipstickSection />
+              {/* Sección 2: Pintalabios — Labial 3D rotando y abriéndose con el scroll (#F8EAE8) */}
+              <LipstickSection />
 
-            {/* Sección 3: Base Líquida / Sérum — Frasco de vidrio y textura fluida (#F5EFEB) */}
-            <FluidSection />
+              {/* Sección 3: Base Líquida / Sérum — Frasco de vidrio y textura fluida (#F5EFEB) */}
+              <FluidSection />
 
-            {/* Sección 4: Polvos Compactos — Estuche de laca blanca con espejo (#F9F6F0) */}
-            <CompactSection />
+              {/* Sección 4: Polvos Compactos — Estuche de laca blanca con espejo (#F9F6F0) */}
+              <CompactSection />
 
-            {/* Galería interactiva de texturas & morphing swatches */}
-            <TextureShowcase />
+              {/* Galería interactiva de texturas & morphing swatches */}
+              <TextureShowcase />
 
-            {/* Catálogo completo con tarjetas de productos */}
-            <ProductCatalog />
+              {/* Catálogo completo con tarjetas de productos */}
+              <ProductCatalog />
 
-            {/* Nueva sección: Arma tu Pack o Caja de Regalo Personalizada */}
-            <CustomBoxSection />
+              {/* Nueva sección: Arma tu Pack o Caja de Regalo Personalizada */}
+              <CustomBoxSection />
 
-            {/* Calidad, garantía y atención */}
-            <ScrollSection />
-          </main>
+              {/* Calidad, garantía y atención */}
+              <ScrollSection />
+            </main>
 
-          {/* Footer editorial */}
-          <Footer />
+            {/* Footer editorial */}
+            <Footer />
 
-          {/* Drawer de carrito */}
-          <CartPanel />
+            {/* Drawer de carrito */}
+            <CartPanel />
 
-          {/* Botón flotante de WhatsApp para atención y pedidos */}
-          <WhatsAppButton />
+            {/* Botón flotante de WhatsApp para atención y pedidos */}
+            <WhatsAppButton />
+
+            {/* Panel de Administrador Oculto (#admin / 5 clics en logo del footer / Ctrl+Shift+A) */}
+            <AdminPanel />
+          </div>
         </div>
-      </div>
-    </CartProvider>
+      </CartProvider>
+    </CatalogProvider>
   )
 }
