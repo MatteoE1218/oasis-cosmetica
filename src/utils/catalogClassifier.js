@@ -13,7 +13,8 @@ const CATEGORY_RULES = [
     gradient: 'linear-gradient(135deg, #9b1b30, #d4637a)',
     keywords: [
       'labial', 'lip', 'lipstick', 'gloss', 'brillo', 'bálsamo', 'balsamo', 'tinta',
-      'terciopelo', 'mate', 'matte', 'rouge', 'labios', 'delineador de labios', 'velvet',
+      'benetint', 'fat oil', 'lip oil', 'drip', 'terciopelo', 'mate', 'matte', 'rouge',
+      'labios', 'delineador de labios', 'velvet', 'plumper', 'voluminizador',
     ],
     defaultShades: [
       { name: 'Carmesí', hex: '#9b1b30' },
@@ -28,8 +29,8 @@ const CATEGORY_RULES = [
     gradient: 'linear-gradient(135deg, #f5e6d3, #c49a6c)',
     keywords: [
       'base', 'sérum', 'serum', 'foundation', 'corrector', 'concealer', 'polvo',
-      'compacto', 'primer', 'bb cream', 'cc cream', 'piel', 'contorno', 'contour',
-      'iluminador', 'highlighter', 'fijador',
+      'compacto', 'primer', 'bb cream', 'cc cream', 'piel', 'fijador', 'setting',
+      'hidratante facial', 'crema con color',
     ],
     defaultShades: [
       { name: 'Porcelana', hex: '#f5e6d3' },
@@ -58,8 +59,9 @@ const CATEGORY_RULES = [
     icon: '🌸',
     gradient: 'linear-gradient(135deg, #e8946a, #b56576)',
     keywords: [
-      'rubor', 'blush', 'colorete', 'mejillas', 'cheek', 'tint', 'melocotón',
-      'peach', 'rosado', 'terracota', 'bronzer', 'bronceador',
+      'rubor', 'blush', 'colorete', 'mejillas', 'cheek', 'melocotón',
+      'peach', 'rosado', 'terracota', 'bronzer', 'bronceador', 'sculpt',
+      'sun sculpt', 'contorno', 'contour', 'iluminador', 'highlighter',
     ],
     defaultShades: [
       { name: 'Pétalo', hex: '#e6b8a2' },
@@ -651,8 +653,25 @@ function consolidateWrappedCatalogLines(rawLines) {
       )
 
     if (isPriceOnly) {
-      buffer.push(line)
-      flushBuffer()
+      const hasNonPriceText = buffer.some(
+        (b) => !/^\$?\s*\d+(?:[.,]\d{1,2})?\s*(?:usd|\$)?$/i.test(b.trim())
+      )
+      const alreadyHasPrice = buffer.some((b) =>
+        /^\$?\s*\d+(?:[.,]\d{1,2})?\s*(?:usd|\$)?$/i.test(b.trim())
+      )
+
+      if (hasNonPriceText && alreadyHasPrice) {
+        // El precio anterior era del producto actual; cerramos el producto actual e iniciamos el siguiente con este nuevo precio
+        flushBuffer()
+        buffer.push(line)
+      } else if (hasNonPriceText && !alreadyHasPrice) {
+        // El precio estaba al final del producto actual
+        buffer.push(line)
+        flushBuffer()
+      } else {
+        // El precio viene al inicio del producto (arriba del título): guardarlo y esperar el título y descripción
+        buffer.push(line)
+      }
       continue
     }
 
@@ -772,9 +791,11 @@ export function parseBulkCatalogText(rawText) {
   const parsedProducts = []
 
   dataLines.forEach((line, index) => {
-    const cells = splitLine(line)
+    // Si la línea contiene separadores " - " y no tiene encabezados CSV, procesarla por bloques de guiones
+    // (así evitamos partir precios con coma decimal como "$3,50" en columnas separadas)
+    const isDashFormatted = !hasHeader && /\s+[-–|]\s+/.test(line) && !line.includes('\t')
+    const cells = isDashFormatted ? [line] : splitLine(line)
 
-    // Si es una línea de texto libre tipo "Labial Mate Velvet - Rojo sedoso de larga duración - $22.50"
     let rawName = ''
     let rawDesc = ''
     let rawPrice = ''
@@ -784,17 +805,39 @@ export function parseBulkCatalogText(rawText) {
     let rawImage = ''
     let rawBadge = ''
 
-    if (!hasHeader && cells.length === 1 && line.includes('-')) {
-      const dashParts = line.split(/\s+[-–|]\s+/)
-      rawName = dashParts[0] || ''
-      const priceIdx = dashParts.findIndex((p) => /\$\s*\d+|\d+[.,]\d{2}/.test(p))
-      if (priceIdx !== -1) {
-        rawPrice = dashParts[priceIdx]
-        rawDesc = dashParts.filter((_, i) => i !== 0 && i !== priceIdx).join('. ')
+    if (isDashFormatted || (!hasHeader && cells.length === 1 && line.includes('-'))) {
+      const dashParts = line
+        .split(/\s+[-–|]\s+/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+
+      // Detectar cuál(es) segmento(s) son precios puros (ej. "$4", "$3,50", "USD 12")
+      const isPurePricePart = (p) =>
+        /^(?:\$\s*\d+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?\s*\$|(?:usd|pvp|precio)\s*\$?\s*\d+(?:[.,]\d{1,2})?)$/i.test(
+          p.trim()
+        )
+
+      const priceParts = dashParts.filter(isPurePricePart)
+      const textOnlyParts = dashParts.filter((p) => !isPurePricePart(p))
+
+      if (priceParts.length > 0) {
+        rawPrice = priceParts[0]
       } else {
-        rawDesc = dashParts[1] || ''
-        rawPrice = dashParts[2] || '25'
+        const inlinePricePart = dashParts.find((p) => /\$\s*\d+(?:[.,]\d{1,2})?/.test(p))
+        if (inlinePricePart) {
+          const m = inlinePricePart.match(/\$\s*\d+(?:[.,]\d{1,2})?/)
+          if (m) rawPrice = m[0]
+        }
       }
+
+      // Si el primer segmento de texto tenía un precio pegado al inicio (ej. "$4 NYX Professional Makeup"), limpiarlo
+      const cleanedTextParts = textOnlyParts
+        .map((p) => p.replace(/^\$\s*\d+(?:[.,]\d{1,2})?\s*[-–:]?\s*/i, '').trim())
+        .filter(Boolean)
+
+      rawName = cleanedTextParts[0] || ''
+      rawDesc = cleanedTextParts.slice(1).join(' • ')
+      if (!rawPrice) rawPrice = '25'
     } else {
       rawName = cells[headerMap.name] || ''
       rawDesc = headerMap.description >= 0 ? cells[headerMap.description] || '' : ''
@@ -1185,92 +1228,329 @@ function detectVisualPhotoRegionsOnPage(pageCanvas, textBoxesCanvasCoords) {
   return regions
 }
 
+const KNOWN_BRAND_REGEX =
+  /^(?:nyx(?:\s+professional\s+makeup)?|maybelline(?:\s+new\s+york)?|l'or[eé]al(?:\s+paris)?|loreal|mac|dior|chanel|fenty(?:\s+beauty)?|rare\s+beauty|charlotte(?:\s+tilbury)?|nars|milani|elf|e\.l\.f\.|essence|catrice|revlon|covergirl|clinique|est[eé]e\s+lauder|lancome|lanc[oô]me|ysl|sephora|oasis|huda(?:\s+beauty)?|anastasia|benefit|too\s+faced|urban\s+decay|tarte|morphe|kiko|bissu|vogue|samy|ruby\s+rose|italia\s+deluxe|beauty\s+creations|pink\s+up|sheglam|pixi|glossier|milk(?:\s+makeup)?|pat\s+mcgrath|kosas|saie|tower\s+28|ilia|haus\s+labs|kylie|rhode|colourpop)$/i
+
+function isStandalonePriceString(str) {
+  return /^(?:\$\s*\d+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?\s*\$|(?:usd|pvp|precio)\s*\$?\s*\d+(?:[.,]\d{1,2})?)$/i.test(
+    str.trim()
+  )
+}
+
 /**
- * Agrupa las líneas de texto de una página de PDF en bloques de producto completos
- * apoyándose tanto en la cercanía a las fotos detectadas en la página como en el agrupador semántico
+ * Construye bloques de texto 2D respetando columnas (no mezcla columna izquierda con columna derecha)
  */
-function groupPdfLinesIntoProductBlocks(rowsWithCoords, pageHeight, pagePhotos = []) {
-  const filteredRows = rowsWithCoords.filter((r) => {
-    const l = r.text.trim()
-    if (!l || l.length < 2) return false
-    if (/^p[áa]gina\s+\d+/i.test(l)) return false
-    if (/^(?:cat[áa]logo|lista de precios|índice|indice|oasis makeup)\s*$/i.test(l)) return false
-    return true
-  })
+function buildColumnAwareTextBlocks(textContent, viewport, scale, pdfjsLib) {
+  const rawItems = []
+  const textBoxesCanvas = []
 
-  if (filteredRows.length === 0) return []
+  for (const item of textContent.items) {
+    const str = (item.str || '').trim()
+    if (!str) continue
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform)
+    const x = tx[4]
+    const y = tx[5]
+    const w = Math.max(10, (item.width || str.length * 5.2) * scale)
+    const h = Math.max(10, Math.abs(tx[3]) || 14)
 
-  // Si la página tiene fotos de productos (ej. 1 a 8 fotos en un catálogo visual) y hay más renglones que fotos,
-  // agrupar los renglones alrededor de su foto correspondiente en la página
-  if (pagePhotos.length >= 1 && pagePhotos.length <= 8 && filteredRows.length > pagePhotos.length) {
-    const buckets = pagePhotos.map((photo) => ({
-      photo,
-      rows: [],
+    textBoxesCanvas.push({ x, y: y - h, w, h: h * 1.3 })
+    rawItems.push({ str, x, endX: x + w, y, w, h })
+  }
+
+  // 1. Agrupar por renglón horizontal, pero PARTIR si hay un hueco horizontal (> 26px) entre columnas
+  rawItems.sort((a, b) => (Math.abs(a.y - b.y) <= 6 ? a.x - b.x : a.y - b.y))
+
+  const lineSegments = []
+  for (const it of rawItems) {
+    // Buscar si existe un segmento en la misma línea Y y cercano en X (misma columna)
+    let seg = lineSegments.find(
+      (s) =>
+        Math.abs(s.y - it.y) <= 6.5 &&
+        it.x - s.endX <= Math.max(26, s.h * 1.6) &&
+        it.x >= s.x - 10
+    )
+    if (!seg) {
+      seg = {
+        x: it.x,
+        endX: it.endX,
+        y: it.y,
+        h: it.h,
+        parts: [it.str],
+      }
+      lineSegments.push(seg)
+    } else {
+      seg.parts.push(it.str)
+      seg.endX = Math.max(seg.endX, it.endX)
+      seg.h = Math.max(seg.h, it.h)
+    }
+  }
+
+  const segments = lineSegments
+    .map((s) => {
+      const text = s.parts.join(' ').replace(/\s{2,}/g, ' ').trim()
+      return {
+        text,
+        x: s.x,
+        endX: s.endX,
+        cx: (s.x + s.endX) / 2,
+        y: s.y,
+        h: s.h,
+        isPrice: isStandalonePriceString(text),
+      }
+    })
+    .filter((s) => {
+      if (!s.text || s.text.length < 2) return false
+      if (/^p[áa]gina\s+\d+/i.test(s.text)) return false
+      if (/^(?:cat[áa]logo|lista de precios|índice|indice)\s*$/i.test(s.text)) return false
+      return true
+    })
+
+  // 2. Unir verticalmente los segmentos que pertenecen al mismo párrafo/columna (misma X izquierda o centro X cercano)
+  segments.sort((a, b) => a.y - b.y)
+  const paragraphs = []
+
+  for (const seg of segments) {
+    if (seg.isPrice) {
+      paragraphs.push({
+        lines: [seg.text],
+        x: seg.x,
+        endX: seg.endX,
+        cx: seg.cx,
+        topY: seg.y,
+        bottomY: seg.y,
+        cy: seg.y,
+        maxH: seg.h,
+        isPrice: true,
+      })
+      continue
+    }
+
+    // Buscar párrafo abierto en la misma columna justo arriba de este segmento
+    const candidate = paragraphs.find((p) => {
+      if (p.isPrice) return false
+      const dy = seg.y - p.bottomY
+      const maxAllowedDy = Math.max(24, p.maxH * 1.85)
+      if (dy < -2 || dy > maxAllowedDy) return false
+
+      // No unir si hay mucha diferencia de tamaño de fuente (ej. Título grande vs descripción pequeña)
+      const fontRatio = Math.max(seg.h, p.maxH) / Math.max(1, Math.min(seg.h, p.maxH))
+      if (fontRatio > 1.32) return false
+
+      // No unir si el párrafo anterior era una marca sola
+      if (p.lines.length === 1 && KNOWN_BRAND_REGEX.test(p.lines[0])) return false
+
+      const alignedLeft = Math.abs(seg.x - p.x) <= 42
+      const alignedCenter = Math.abs(seg.cx - p.cx) <= 48
+      return alignedLeft || alignedCenter
+    })
+
+    if (candidate) {
+      candidate.lines.push(seg.text)
+      candidate.x = Math.min(candidate.x, seg.x)
+      candidate.endX = Math.max(candidate.endX, seg.endX)
+      candidate.cx = (candidate.x + candidate.endX) / 2
+      candidate.bottomY = seg.y
+      candidate.cy = (candidate.topY + candidate.bottomY) / 2
+      candidate.maxH = Math.max(candidate.maxH, seg.h)
+    } else {
+      paragraphs.push({
+        lines: [seg.text],
+        x: seg.x,
+        endX: seg.endX,
+        cx: seg.cx,
+        topY: seg.y,
+        bottomY: seg.y,
+        cy: seg.y,
+        maxH: seg.h,
+        isPrice: false,
+      })
+    }
+  }
+
+  const finalBlocks = paragraphs.map((p) => ({
+    text: p.lines.join(' ').replace(/\s{2,}/g, ' ').trim(),
+    x: p.x,
+    cx: p.cx,
+    topY: p.topY,
+    bottomY: p.bottomY,
+    cy: p.cy,
+    maxH: p.maxH,
+    isPrice: p.isPrice,
+  }))
+
+  return { blocks: finalBlocks, textBoxesCanvas }
+}
+
+/**
+ * Agrupa fotos que están en la misma franja horizontal de la página (ej. foto principal + círculo de tono/detalle)
+ * para que pertenezcan al MISMO producto como galería y NO clonen el producto en 2 filas.
+ */
+function clusterPagePhotosIntoBands(pagePhotos, pageHeight) {
+  if (!pagePhotos || pagePhotos.length === 0) return []
+  const sorted = [...pagePhotos].sort((a, b) => a.cy - b.cy)
+  const bands = []
+  const bandThresholdY = pageHeight * 0.22
+
+  for (const photo of sorted) {
+    const existingBand = bands.find((b) => Math.abs(b.cy - photo.cy) <= bandThresholdY)
+    if (existingBand) {
+      existingBand.photos.push(photo)
+      // Ordenar fotos de la franja por área de mayor a menor para que la foto principal sea la portada
+      existingBand.photos.sort((a, b) => b.width * b.height - a.width * a.height)
+      existingBand.mainPhoto = existingBand.photos[0]
+      existingBand.cy =
+        existingBand.photos.reduce((acc, p) => acc + p.cy, 0) / existingBand.photos.length
+      existingBand.cx = existingBand.mainPhoto.cx
+    } else {
+      bands.push({
+        mainPhoto: photo,
+        photos: [photo],
+        cx: photo.cx,
+        cy: photo.cy,
+      })
+    }
+  }
+  return bands
+}
+
+/**
+ * A partir de los bloques de texto 2D y las franjas de fotos de una página, construye los productos completos
+ */
+function assemblePageProducts(textBlocks, pageHeight, photoBands) {
+  if (textBlocks.length === 0 && photoBands.length === 0) return []
+
+  // Si hay franjas de fotos en la página (ej. 1, 2, 3 o 4 productos por página), asignar cada bloque de texto a su franja
+  let numBands = photoBands.length
+  if (numBands > 0) {
+    const buckets = photoBands.map((band) => ({
+      band,
+      blocks: [],
     }))
 
-    for (const row of filteredRows) {
+    for (const blk of textBlocks) {
       let bestBucket = buckets[0]
       let bestDist = Infinity
       for (const bkt of buckets) {
-        const dx = Math.abs(bkt.photo.cx - row.cx)
-        const dy = Math.abs(bkt.photo.cy - row.cy)
-        const dist = Math.hypot(dx * 0.85, dy)
+        // Priorizar cercanía vertical (misma franja horizontal de producto)
+        const dy = Math.abs(bkt.band.cy - blk.cy)
+        const dx = Math.abs(bkt.band.cx - blk.cx)
+        const dist = dy + dx * 0.18
         if (dist < bestDist) {
           bestDist = dist
           bestBucket = bkt
         }
       }
-      bestBucket.rows.push(row)
+      bestBucket.blocks.push(blk)
     }
 
-    const nonEmptyBuckets = buckets.filter((b) => b.rows.length > 0)
-    if (nonEmptyBuckets.length > 0) {
-      const blocksFromPhotos = []
-      for (const bkt of nonEmptyBuckets) {
-        bkt.rows.sort((a, b) => a.cy - b.cy)
-        const rawStrings = bkt.rows.map((r) => r.text)
-        const consolidated = consolidateWrappedCatalogLines(rawStrings)
-        const joinedText =
-          consolidated.length === 1
-            ? consolidated[0]
-            : (() => {
-                // Unir todo el texto asociado a esa foto en un único producto
-                const first = rawStrings[0]
-                const second = rawStrings[1] || ''
-                const isFirstBrandOnly =
-                  /^(?:nyx(?:\s+professional\s+makeup)?|maybelline|l'or[eé]al|loreal|mac|dior|chanel|fenty|rare\s+beauty|charlotte|nars|milani|elf|essence|catrice|revlon|covergirl|clinique|sephora|oasis|huda|benefit|urban\s+decay|tarte|morphe|kiko|bissu|vogue|samy|ruby\s+rose|italia\s+deluxe|beauty\s+creations|pink\s+up)$/i.test(
-                    first.trim()
-                  )
-                const title = isFirstBrandOnly && second ? `${first} ${second}` : first
-                const restStart = isFirstBrandOnly && second ? 2 : 1
-                const rest = rawStrings.slice(restStart).join(' ').replace(/\s{2,}/g, ' ').trim()
-                return rest ? `${title} - ${rest}` : title
-              })()
+    const results = []
+    for (const bkt of buckets) {
+      if (bkt.blocks.length === 0 && bkt.band.photos.length === 0) continue
+      const built = buildSingleProductFromBlocks(bkt.blocks, bkt.band.photos)
+      if (built) results.push(built)
+    }
+    return results
+  }
 
-        blocksFromPhotos.push({
-          lineText: joinedText,
-          cx: bkt.photo.cx,
-          cy: bkt.photo.cy,
-          matchedPhoto: bkt.photo,
-        })
+  // Si no hubo fotos detectadas, agrupar bloques por precios o distancia vertical
+  const consolidated = consolidateWrappedCatalogLines(textBlocks.map((b) => b.text))
+  return consolidated.map((lineText) => ({
+    lineText,
+    photos: [],
+    explicitName: null,
+    explicitDesc: null,
+    explicitPrice: null,
+  }))
+}
+
+function buildSingleProductFromBlocks(blocks, photos = []) {
+  const priceBlocks = []
+  const contentBlocks = []
+
+  for (const blk of blocks) {
+    if (blk.isPrice || isStandalonePriceString(blk.text)) {
+      priceBlocks.push(blk)
+    } else {
+      // Verificar si el texto empieza o termina con un precio pegado (ej. "$4 NYX Professional Makeup")
+      const leadingPrice = blk.text.match(/^\$\s*(\d+(?:[.,]\d{1,2})?)\s+(.+)$/)
+      if (leadingPrice) {
+        priceBlocks.push({ ...blk, text: `$${leadingPrice[1]}` })
+        contentBlocks.push({ ...blk, text: leadingPrice[2].trim() })
+      } else {
+        contentBlocks.push(blk)
       }
-      return blocksFromPhotos
     }
   }
 
-  // Si no se agrupó por fotos, usar el consolidador semántico de líneas partidas
-  const consolidatedStrings = consolidateWrappedCatalogLines(filteredRows.map((r) => r.text))
-  return consolidatedStrings.map((lineText, idx) => {
-    const approxRow =
-      filteredRows[Math.min(filteredRows.length - 1, Math.floor((idx / consolidatedStrings.length) * filteredRows.length))] ||
-      filteredRows[0]
-    return {
-      lineText,
-      cx: approxRow.cx,
-      cy: approxRow.cy,
-      matchedPhoto: null,
+  let extractedPrice = null
+  if (priceBlocks.length > 0) {
+    extractedPrice = extractPriceFromText(priceBlocks[0].text, 25.0)
+  } else {
+    for (const cb of contentBlocks) {
+      if (/\$\s*\d+(?:[.,]\d{1,2})?/.test(cb.text)) {
+        extractedPrice = extractPriceFromText(cb.text, 25.0)
+        cb.text = cb.text.replace(/\$\s*\d+(?:[.,]\d{1,2})?/g, '').trim()
+      }
     }
-  })
+  }
+
+  const cleanContent = contentBlocks.filter((b) => b.text && b.text.length >= 2)
+  if (cleanContent.length === 0 && photos.length === 0) return null
+
+  // Ordenar los bloques de contenido de arriba hacia abajo (topY)
+  cleanContent.sort((a, b) => (Math.abs(a.topY - b.topY) <= 10 ? a.x - b.x : a.topY - b.topY))
+
+  let productName = ''
+  let descBlocks = []
+
+  if (cleanContent.length > 0) {
+    const first = cleanContent[0]
+    const second = cleanContent[1]
+
+    // Si el primer bloque es una marca o línea muy corta y hay un segundo bloque de título arriba
+    if (
+      second &&
+      (KNOWN_BRAND_REGEX.test(first.text) ||
+        (first.text.split(/\s+/).length <= 3 && second.topY - first.bottomY <= 36))
+    ) {
+      // Evitar unir si el segundo bloque ya es una oración larga de descripción (> 6 palabras)
+      if (second.text.split(/\s+/).length <= 6) {
+        productName = `${first.text} ${second.text}`.replace(/\s{2,}/g, ' ').trim()
+        descBlocks = cleanContent.slice(2)
+      } else {
+        productName = first.text
+        descBlocks = cleanContent.slice(1)
+      }
+    } else {
+      productName = first.text
+      descBlocks = cleanContent.slice(1)
+    }
+  }
+
+  // Ordenar los bloques de descripción por columna (izquierda primero de arriba a abajo, luego derecha de arriba a abajo)
+  descBlocks.sort((a, b) => (Math.abs(a.topY - b.topY) <= 14 ? a.x - b.x : a.topY - b.topY))
+  const descriptionText = descBlocks
+    .map((b) => b.text)
+    .join(' • ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
+  const finalPrice = extractedPrice !== null ? extractedPrice : 25.0
+  const lineText = [
+    productName || 'Producto Oasis',
+    descriptionText,
+    `$${finalPrice}`,
+  ]
+    .filter(Boolean)
+    .join(' - ')
+
+  return {
+    lineText,
+    photos,
+    explicitName: productName,
+    explicitDesc: descriptionText,
+    explicitPrice: finalPrice,
+  }
 }
 
 /**
@@ -1279,7 +1559,7 @@ function groupPdfLinesIntoProductBlocks(rowsWithCoords, pageHeight, pagePhotos =
 export async function extractCatalogFromPdfFile(file) {
   const arrayBuffer = await file.arrayBuffer()
   const rawEmbeddedImages = await extractEmbeddedJpegsFromPdfBuffer(arrayBuffer)
-  let allProductBlocks = []
+  let allAssembledProducts = []
   let allPagePhotos = []
 
   try {
@@ -1291,45 +1571,21 @@ export async function extractCatalogFromPdfFile(file) {
       const scale = 1.6
       const viewport = page.getViewport({ scale })
 
-      // 1. Renderizar la página en un canvas de alta nitidez para extraer cualquier tipo de foto (PNG, Flate, JPEG, Canva, etc.)
+      // 1. Renderizar la página en un canvas de alta nitidez
       const pageCanvas = document.createElement('canvas')
       pageCanvas.width = Math.floor(viewport.width)
       pageCanvas.height = Math.floor(viewport.height)
       const pageCtx = pageCanvas.getContext('2d')
       await page.render({ canvasContext: pageCtx, viewport }).promise
 
-      // 2. Extraer texto con coordenadas en el canvas
+      // 2. Extraer bloques de texto 2D respetando columnas
       const textContent = await page.getTextContent()
-      const rows = []
-      const textBoxesCanvas = []
-
-      for (const item of textContent.items) {
-        const str = (item.str || '').trim()
-        if (!str) continue
-        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform)
-        const x = tx[4]
-        const y = tx[5]
-        const w = (item.width || 40) * scale
-        const h = Math.abs(tx[3]) || 14
-
-        textBoxesCanvas.push({ x, y: y - h, w, h: h * 1.3 })
-
-        let row = rows.find((r) => Math.abs(r.cy - y) <= 7)
-        if (!row) {
-          row = { cy: y, items: [] }
-          rows.push(row)
-        }
-        row.items.push({ x, str })
-      }
-
-      // Ordenar de arriba hacia abajo (en coordenadas de canvas, Y crece hacia abajo)
-      rows.sort((a, b) => a.cy - b.cy)
-      const rowsWithCoords = rows.map((row) => {
-        row.items.sort((a, b) => a.x - b.x)
-        const text = row.items.map((it) => it.str).join(' ').replace(/\s{2,}/g, ' ').trim()
-        const cx = row.items.reduce((acc, it) => acc + it.x, 0) / (row.items.length || 1)
-        return { text, cx, cy: row.cy }
-      })
+      const { blocks: textBlocks, textBoxesCanvas } = buildColumnAwareTextBlocks(
+        textContent,
+        viewport,
+        scale,
+        pdfjsLib
+      )
 
       // 3. Detectar las cajas exactas de las fotos dibujadas en esta página mediante getOperatorList()
       let pagePhotos = []
@@ -1354,7 +1610,6 @@ export async function extractCatalogFromPdfFile(file) {
             fn === OPS.paintJpegXObject ||
             fn === OPS.paintInlineImageXObject
           ) {
-            // En PDF, las imágenes se dibujan en el cuadrado unitario [0,1]x[0,1] transformado por ctm
             const x0 = ctm[4]
             const y0 = ctm[5]
             const x1 = ctm[0] + ctm[4]
@@ -1371,7 +1626,6 @@ export async function extractCatalogFromPdfFile(file) {
             const bw = maxX - minX
             const bh = maxY - minY
 
-            // Descartar iconos diminutos o fondos que cubren el 95%+ de toda la hoja
             const isFullPageBg = bw > viewport.width * 0.93 && bh > viewport.height * 0.93
             if (bw >= 48 && bh >= 48 && !isFullPageBg) {
               const isDuplicate = pagePhotos.some(
@@ -1388,13 +1642,11 @@ export async function extractCatalogFromPdfFile(file) {
         // continuar con detector visual
       }
 
-      // 4. Si el PDF tenía las fotos acopladas en el fondo o en vectores/grupos, usar el detector visual de regiones
       if (pagePhotos.length === 0) {
         pagePhotos = detectVisualPhotoRegionsOnPage(pageCanvas, textBoxesCanvas)
       }
 
-      // 5. Si aún no hay recorte individual en la página, tomar captura de la zona visual de la página
-      if (pagePhotos.length === 0) {
+      if (pagePhotos.length === 0 && textBlocks.length > 0) {
         const fallbackCrop = cropCanvasRegion(
           pageCanvas,
           viewport.width * 0.08,
@@ -1405,94 +1657,88 @@ export async function extractCatalogFromPdfFile(file) {
         if (fallbackCrop) pagePhotos.push(fallbackCrop)
       }
 
-      // Ordenar fotos de arriba hacia abajo, izquierda a derecha
-      pagePhotos.sort((a, b) => (Math.abs(a.cy - b.cy) > 35 ? a.cy - b.cy : a.cx - b.cx))
+      // 4. Agrupar fotos de la misma franja horizontal en un único producto (para no clonar filas)
+      const photoBands = clusterPagePhotosIntoBands(pagePhotos, viewport.height)
 
-      // 6. Agrupar los renglones de la página alrededor de las fotos detectadas o por estructura semántica
-      const pageBlocks = groupPdfLinesIntoProductBlocks(rowsWithCoords, viewport.height, pagePhotos)
-
-      const usedPhotoIndices = new Set()
-      for (const block of pageBlocks) {
-        if (block.matchedPhoto) {
-          allProductBlocks.push({
-            lineText: block.lineText,
-            photo: block.matchedPhoto,
-          })
-          continue
-        }
-
-        let bestPhoto = null
-        let bestDist = Infinity
-        let bestIdx = -1
-
-        pagePhotos.forEach((photo, pIdx) => {
-          if (usedPhotoIndices.has(pIdx)) return
-          const dist = Math.hypot((photo.cx - block.cx) * 0.7, photo.cy - block.cy)
-          if (dist < bestDist) {
-            bestDist = dist
-            bestPhoto = photo
-            bestIdx = pIdx
-          }
-        })
-
-        if (bestIdx !== -1) {
-          usedPhotoIndices.add(bestIdx)
-        }
-        allProductBlocks.push({
-          lineText: block.lineText,
-          photo: bestPhoto,
-        })
-      }
-
-      // Si era una página puramente fotográfica sin texto seleccionable, crear productos a partir de las fotos de la página
-      if (pageBlocks.length === 0 && pagePhotos.length > 0) {
-        for (const photo of pagePhotos) {
-          allProductBlocks.push({
-            lineText: '',
-            photo,
-          })
-        }
-      }
-
+      // 5. Ensamblar productos de la página
+      const pageProducts = assemblePageProducts(textBlocks, viewport.height, photoBands)
+      allAssembledProducts.push(...pageProducts)
       allPagePhotos.push(...pagePhotos)
     }
   } catch {
-    // Fallback offline nativo si falla PDF.js
     const nativeText = await extractTextFromPdfBufferNative(arrayBuffer)
     const rawLines = nativeText
       .split(/\r?\n/)
       .map((l) => l.trim())
       .filter((l) => l.length >= 2 && !/^p[áa]gina\s+\d+/i.test(l))
     const consolidatedLines = consolidateWrappedCatalogLines(rawLines)
-    allProductBlocks = consolidatedLines.map((lineText, idx) => ({
+    allAssembledProducts = consolidatedLines.map((lineText, idx) => ({
       lineText,
-      photo: rawEmbeddedImages[idx] || null,
+      photos: rawEmbeddedImages[idx] ? [rawEmbeddedImages[idx]] : [],
+      explicitName: null,
+      explicitDesc: null,
+      explicitPrice: null,
     }))
   }
 
-  // Construir los productos finales combinando texto extraído + foto emparejada
   const textLinesForBox = []
   const finalItems = []
   const baseMeta = parseFilenameMetadata(file.name)
 
-  allProductBlocks.forEach((entry, idx) => {
-    const photo = entry.photo || rawEmbeddedImages[idx] || null
-    if (entry.lineText) {
+  allAssembledProducts.forEach((entry, idx) => {
+    const photos =
+      entry.photos && entry.photos.length > 0
+        ? entry.photos
+        : rawEmbeddedImages[idx]
+          ? [rawEmbeddedImages[idx]]
+          : []
+    const mainPhoto = photos[0] || null
+    const allPhotoUrls = photos.map((p) => p.dataUrl).filter(Boolean)
+
+    if (entry.explicitName) {
+      const rule = autoClassifyProduct(entry.explicitName, entry.explicitDesc || '')
+      const autoCopy = autoGenerateCopy(entry.explicitName, rule.category)
+      const finalDesc = entry.explicitDesc || autoCopy.description
+      const finalPrice = entry.explicitPrice ?? 25.0
+      const shades =
+        mainPhoto?.dominantColors?.length >= 1
+          ? mainPhoto.dominantColors
+          : rule.defaultShades
+
+      textLinesForBox.push(`${entry.explicitName} - ${finalDesc} - $${finalPrice}`)
+      finalItems.push({
+        id: `pdf-prod-${Date.now()}-${idx}`,
+        name: entry.explicitName,
+        category: rule.category,
+        price: finalPrice,
+        stock: 25,
+        tagline: finalDesc.slice(0, 58),
+        description: finalDesc,
+        shades,
+        defaultShade: 0,
+        badge: 'Nuevo',
+        icon: rule.icon,
+        gradient: rule.gradient,
+        image: allPhotoUrls[0] || '',
+        images: allPhotoUrls,
+        includeInPack: true,
+      })
+    } else if (entry.lineText) {
       textLinesForBox.push(entry.lineText)
       const parsed = parseBulkCatalogText(entry.lineText)[0]
       if (parsed) {
         const shades =
-          photo?.dominantColors?.length >= 2 ? photo.dominantColors : parsed.shades
+          mainPhoto?.dominantColors?.length >= 1 ? mainPhoto.dominantColors : parsed.shades
         finalItems.push({
           ...parsed,
           id: `pdf-prod-${Date.now()}-${idx}`,
-          image: photo?.dataUrl || parsed.image || '',
-          images: photo?.dataUrl ? [photo.dataUrl] : parsed.images || [],
+          image: allPhotoUrls[0] || parsed.image || '',
+          images: allPhotoUrls.length > 0 ? allPhotoUrls : parsed.images || [],
           shades,
         })
       }
-    } else if (photo) {
-      const hint = photo.visualHint || inferVisualProductHint(photo.dominantColors)
+    } else if (mainPhoto) {
+      const hint = mainPhoto.visualHint || inferVisualProductHint(mainPhoto.dominantColors)
       const itemName = `${hint.suggestedName || baseMeta.name} #${idx + 1}`
       const rule = autoClassifyProduct(itemName, '', hint.category)
       const copy = autoGenerateCopy(itemName, rule.category)
@@ -1506,21 +1752,24 @@ export async function extractCatalogFromPdfFile(file) {
         tagline: copy.tagline,
         description: copy.description,
         shades:
-          photo.dominantColors?.length >= 2
-            ? photo.dominantColors
+          mainPhoto.dominantColors?.length >= 1
+            ? mainPhoto.dominantColors
             : rule.defaultShades,
         defaultShade: 0,
         badge: 'Nuevo',
         icon: rule.icon,
         gradient: rule.gradient,
-        image: photo.dataUrl,
-        images: [photo.dataUrl],
+        image: allPhotoUrls[0] || '',
+        images: allPhotoUrls,
         includeInPack: true,
       })
     }
   })
 
-  const photosAttachedCount = finalItems.filter((it) => Boolean(it.image)).length
+  const photosAttachedCount = finalItems.reduce(
+    (acc, it) => acc + (it.images?.length || (it.image ? 1 : 0)),
+    0
+  )
 
   return {
     text: textLinesForBox.join('\n'),
