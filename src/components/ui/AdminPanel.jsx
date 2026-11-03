@@ -406,17 +406,65 @@ export default function AdminPanel() {
     )
   }
 
-  const handleBulkItemPhotoChange = async (index, file) => {
-    if (!file) return
-    const processed = await processImageFile(file)
-    let url = processed.dataUrl
-    try {
-      url = await uploadImageToSupabase(file)
-    } catch {
-      // fallback dataUrl
+  const handleBulkItemPhotoChange = async (index, fileList, append = true) => {
+    const files = Array.from(fileList || [])
+    if (files.length === 0) return
+
+    const uploadedUrls = []
+    for (const file of files) {
+      const processed = await processImageFile(file)
+      let url = processed.dataUrl
+      try {
+        url = await uploadImageToSupabase(file)
+      } catch {
+        // fallback dataUrl
+      }
+      uploadedUrls.push(url)
     }
+
     setBulkPreview((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, image: url, images: [url] } : item))
+      prev.map((item, idx) => {
+        if (idx !== index) return item
+        const existing =
+          Array.isArray(item.images) && item.images.length > 0
+            ? item.images
+            : item.image
+              ? [item.image]
+              : []
+        const combined = append ? [...existing, ...uploadedUrls] : uploadedUrls
+        return {
+          ...item,
+          image: combined[0] || '',
+          images: combined,
+        }
+      })
+    )
+    showToast(`📸 ${uploadedUrls.length} foto(s) añadida(s) al producto`)
+  }
+
+  const handleRemoveBulkItemPhoto = (index, photoIdx) => {
+    setBulkPreview((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== index) return item
+        const existing =
+          Array.isArray(item.images) && item.images.length > 0
+            ? item.images
+            : item.image
+              ? [item.image]
+              : []
+        const filtered = existing.filter((_, i) => i !== photoIdx)
+        return {
+          ...item,
+          images: filtered,
+          image: filtered.includes(item.image) ? item.image : filtered[0] || '',
+        }
+      })
+    )
+  }
+
+  const handleSetMainBulkItemPhoto = (index, photoUrl) => {
+    setBulkPreview((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, image: photoUrl } : item))
     )
   }
 
@@ -1138,7 +1186,7 @@ export default function AdminPanel() {
                       <table className="admin-bulk-table">
                         <thead>
                           <tr>
-                            <th>Foto</th>
+                            <th>Fotos del Producto</th>
                             <th>Nombre del Producto</th>
                             <th>Categoría (Auto)</th>
                             <th>Descripción (Auto)</th>
@@ -1148,24 +1196,72 @@ export default function AdminPanel() {
                           </tr>
                         </thead>
                         <tbody>
-                          {bulkPreview.map((item, idx) => (
+                          {bulkPreview.map((item, idx) => {
+                            const itemGallery =
+                              Array.isArray(item.images) && item.images.length > 0
+                                ? item.images
+                                : item.image
+                                  ? [item.image]
+                                  : []
+
+                            return (
                             <tr key={item.id}>
-                              <td>
-                                <label className="admin-table-photo" title="Cambiar foto">
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    hidden
-                                    onChange={(e) =>
-                                      handleBulkItemPhotoChange(idx, e.target.files?.[0])
-                                    }
-                                  />
-                                  {item.image ? (
-                                    <img src={item.image} alt={item.name} />
-                                  ) : (
-                                    <span>{item.icon} 📸</span>
+                              <td className="admin-bulk-col-photos">
+                                <div className="admin-bulk-photos-cell">
+                                  <div className="admin-bulk-thumbs-list">
+                                    {itemGallery.length > 0 ? (
+                                      itemGallery.map((imgUrl, pIdx) => (
+                                        <div
+                                          key={pIdx}
+                                          className={`admin-bulk-thumb ${
+                                            item.image === imgUrl ? 'admin-bulk-thumb--main' : ''
+                                          }`}
+                                          title="Clic para elegir como portada"
+                                        >
+                                          <img
+                                            src={imgUrl}
+                                            alt={`${item.name} ${pIdx + 1}`}
+                                            onClick={() => handleSetMainBulkItemPhoto(idx, imgUrl)}
+                                          />
+                                          <button
+                                            type="button"
+                                            className="admin-bulk-thumb__remove"
+                                            title="Quitar esta foto"
+                                            onClick={() => handleRemoveBulkItemPhoto(idx, pIdx)}
+                                          >
+                                            ×
+                                          </button>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="admin-table-photo-empty">
+                                        <span>{item.icon}</span>
+                                      </div>
+                                    )}
+
+                                    <label
+                                      className="admin-bulk-add-photo-btn"
+                                      title="Añadir una o varias fotos a este producto"
+                                    >
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        hidden
+                                        onChange={(e) => {
+                                          handleBulkItemPhotoChange(idx, e.target.files, true)
+                                          e.target.value = ''
+                                        }}
+                                      />
+                                      <span>+ Fotos</span>
+                                    </label>
+                                  </div>
+                                  {itemGallery.length > 1 && (
+                                    <small className="admin-bulk-photos-count">
+                                      {itemGallery.length} fotos (clic para portada)
+                                    </small>
                                   )}
-                                </label>
+                                </div>
                               </td>
                               <td className="admin-bulk-col-name">
                                 <textarea
@@ -1252,7 +1348,8 @@ export default function AdminPanel() {
                                 </button>
                               </td>
                             </tr>
-                          ))}
+                            )
+                          })}
                         </tbody>
                       </table>
                     </div>
