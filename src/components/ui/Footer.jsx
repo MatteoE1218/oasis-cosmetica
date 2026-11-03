@@ -65,7 +65,7 @@ export default function Footer() {
           <div
             className="footer__logo-wrap"
             onClick={handleSecretAdminClick}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
+            style={{ userSelect: 'none' }}
           >
             <img src="/oasis-logo.png" alt="Oasis Makeup" className="footer__logo-icon" width="34" height="34" />
             <span className="footer__logo">OASIS MAKEUP</span>

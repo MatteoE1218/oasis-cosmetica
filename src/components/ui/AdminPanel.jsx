@@ -63,6 +63,8 @@ export default function AdminPanel() {
     setIsAdminAuthenticated,
     verifyAdminPin,
     updateAdminPin,
+    failedAttempts,
+    lockoutUntil,
     addOrUpdateProduct,
     addManyProducts,
     deleteProduct,
@@ -124,10 +126,18 @@ export default function AdminPanel() {
     e.preventDefault()
     setAuthError('')
 
+    if (Date.now() < lockoutUntil) {
+      const secs = Math.ceil((lockoutUntil - Date.now()) / 1000)
+      setAuthError(`Demasiados intentos fallidos. Espera ${secs} segundos para volver a intentar.`)
+      return
+    }
+
     if (authMode === 'pin') {
-      const ok = verifyAdminPin(pinInput)
+      setAuthLoading(true)
+      const ok = await verifyAdminPin(pinInput)
+      setAuthLoading(false)
       if (!ok) {
-        setAuthError('Clave o PIN incorrecto. (Por defecto: oasis2026)')
+        setAuthError('Acceso denegado: Clave de administrador inválida.')
       } else {
         setPinInput('')
       }
@@ -546,9 +556,10 @@ export default function AdminPanel() {
                     <input
                       id="admin-pin-input"
                       type="password"
-                      placeholder="Ingresa tu clave (ej. oasis2026)"
+                      placeholder="••••••••••••"
                       value={pinInput}
                       onChange={(e) => setPinInput(e.target.value)}
+                      autoComplete="off"
                       autoFocus
                     />
                   </div>
@@ -1586,17 +1597,14 @@ export default function AdminPanel() {
                   <div className="admin-cloud-card">
                     <h3>🔐 Seguridad del Panel Oculto</h3>
                     <p>
-                      <strong>¿Cómo abrir este panel cuando está oculto?</strong>
+                      <strong>Protección Activa:</strong> El acceso por enlaces (<code>#admin</code>) y atajos de teclado ha sido bloqueado para evitar accesos curiosos.
                     </p>
                     <ul className="admin-secret-list">
                       <li>
-                        <strong>Opción 1:</strong> Hacer <strong>5 clics seguidos</strong> sobre el logo de <em>OASIS MAKEUP</em> al final de la página (Footer).
+                        <strong>Único método de apertura:</strong> Hacer <strong>5 clics rápidos seguidos</strong> sobre el logo de <em>OASIS MAKEUP</em> en el pie de página (Footer).
                       </li>
                       <li>
-                        <strong>Opción 2:</strong> Agregar <code>#admin</code> al final del link de tu página.
-                      </li>
-                      <li>
-                        <strong>Opción 3:</strong> Presionar <code>Ctrl + Shift + A</code> en el teclado.
+                        <strong>Protección Anti-Fuerza Bruta:</strong> Bloqueo automático temporal tras 5 intentos fallidos y cifrado SHA-256 sin pistas en pantalla.
                       </li>
                     </ul>
 
@@ -1612,10 +1620,10 @@ export default function AdminPanel() {
                         <button
                           type="button"
                           className="admin-btn-secondary"
-                          onClick={() => {
-                            if (updateAdminPin(newPinValue)) {
+                          onClick={async () => {
+                            if (await updateAdminPin(newPinValue)) {
                               setNewPinValue('')
-                              showToast('✓ Nueva clave de administrador guardada')
+                              showToast('✓ Nueva clave cifrada y guardada con éxito')
                             } else {
                               showToast('La clave debe tener al menos 4 caracteres')
                             }

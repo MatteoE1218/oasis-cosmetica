@@ -12,8 +12,16 @@ const CatalogContext = createContext(null)
 const LOCAL_CATALOG_KEY = 'oasis_catalog_products_v1'
 const FEATURED_SLOTS_KEY = 'oasis_featured_slots_v1'
 const PACK_TYPES_KEY = 'oasis_pack_types_v1'
-const ADMIN_PIN_KEY = 'oasis_admin_pin_v1'
-const DEFAULT_ADMIN_PIN = 'oasis2026'
+const ADMIN_PIN_HASH_KEY = 'oasis_admin_pin_sha256_v1'
+// SHA-256 de la clave inicial ('oasis2026') sin exponer el texto plano en el bundle
+const DEFAULT_ADMIN_PIN_SHA256 = '498f865e81690fb45dc9a2251d761384f846b8bf6525eb499f180b1f74bc85b4'
+
+async function sha256Hex(message) {
+  const msgBuffer = new TextEncoder().encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
 
 export const DEFAULT_PACK_TYPES = [
   {
@@ -222,31 +230,18 @@ export function CatalogProvider({ children }) {
     refreshFromCloud()
   }, [refreshFromCloud])
 
-  // Detectar ruta oculta (#admin o ?admin=1) y atajo secreto Ctrl + Shift + A
+  // Seguridad: Deshabilitado el acceso por URL (#admin) o atajos públicos.
+  // Solo se puede abrir mediante el gesto oculto en el logo del Footer (5 clics rápidos).
   useEffect(() => {
-    const checkHashAndQuery = () => {
+    const cleanSuspiciousUrl = () => {
       const hash = window.location.hash.toLowerCase()
-      const search = window.location.search.toLowerCase()
-      if (hash === '#admin' || hash === '#panel-admin' || search.includes('admin=oasis')) {
-        setIsAdminOpen(true)
+      if (hash === '#admin' || hash === '#panel-admin') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
       }
     }
-
-    checkHashAndQuery()
-    window.addEventListener('hashchange', checkHashAndQuery)
-
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault()
-        setIsAdminOpen((prev) => !prev)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('hashchange', checkHashAndQuery)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
+    cleanSuspiciousUrl()
+    window.addEventListener('hashchange', cleanSuspiciousUrl)
+    return () => window.removeEventListener('hashchange', cleanSuspiciousUrl)
   }, [])
 
   // Acciones CRUD de productos (Local inmediato + Supabase en la nube)
@@ -315,19 +310,41 @@ export function CatalogProvider({ children }) {
     }
   }, [saveLocally])
 
-  const verifyAdminPin = useCallback((inputPin) => {
-    const storedPin = localStorage.getItem(ADMIN_PIN_KEY) || DEFAULT_ADMIN_PIN
-    if (inputPin.trim() === storedPin) {
-      setIsAdminAuthenticated(true)
-      sessionStorage.setItem('oasis_admin_unlocked', 'true')
-      return true
-    }
-    return false
-  }, [])
+  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [lockoutUntil, setLockoutUntil] = useState(0)
 
-  const updateAdminPin = useCallback((newPin) => {
+  const verifyAdminPin = useCallback(
+    async (inputPin) => {
+      if (Date.now() < lockoutUntil) {
+        return false
+      }
+      const cleanInput = (inputPin || '').trim()
+      if (!cleanInput) return false
+
+      const inputHash = await sha256Hex(cleanInput)
+      const storedHash = localStorage.getItem(ADMIN_PIN_HASH_KEY) || DEFAULT_ADMIN_PIN_SHA256
+
+      if (inputHash === storedHash) {
+        setFailedAttempts(0)
+        setIsAdminAuthenticated(true)
+        sessionStorage.setItem('oasis_admin_unlocked', 'true')
+        return true
+      }
+
+      const nextFailures = failedAttempts + 1
+      setFailedAttempts(nextFailures)
+      if (nextFailures >= 5) {
+        setLockoutUntil(Date.now() + 3 * 60 * 1000) // Bloqueo de 3 minutos tras 5 intentos fallidos
+      }
+      return false
+    },
+    [failedAttempts, lockoutUntil]
+  )
+
+  const updateAdminPin = useCallback(async (newPin) => {
     if (newPin && newPin.trim().length >= 4) {
-      localStorage.setItem(ADMIN_PIN_KEY, newPin.trim())
+      const hashed = await sha256Hex(newPin.trim())
+      localStorage.setItem(ADMIN_PIN_HASH_KEY, hashed)
       return true
     }
     return false
@@ -364,6 +381,8 @@ export function CatalogProvider({ children }) {
       setIsAdminAuthenticated,
       verifyAdminPin,
       updateAdminPin,
+      failedAttempts,
+      lockoutUntil,
       addOrUpdateProduct,
       addManyProducts,
       deleteProduct,
@@ -385,6 +404,8 @@ export function CatalogProvider({ children }) {
       isAdminAuthenticated,
       verifyAdminPin,
       updateAdminPin,
+      failedAttempts,
+      lockoutUntil,
       addOrUpdateProduct,
       addManyProducts,
       deleteProduct,
