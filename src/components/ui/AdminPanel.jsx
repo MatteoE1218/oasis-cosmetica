@@ -509,10 +509,10 @@ export default function AdminPanel() {
             <span className={`admin-sync-pill admin-sync-pill--${syncStatus}`} title={syncMessage}>
               <span className="admin-sync-dot" />
               {syncStatus === 'cloud'
-                ? 'Supabase Conectado'
+                ? 'En Línea • Sincronizado'
                 : syncStatus === 'syncing'
-                  ? 'Sincronizando...'
-                  : 'Guardado Local + Nube'}
+                  ? 'Guardando cambios...'
+                  : 'Guardado Automático'}
             </span>
 
             <button
@@ -535,83 +535,28 @@ export default function AdminPanel() {
               <div className="admin-login-icon">🔒</div>
               <h3>Acceso Exclusivo Administrador</h3>
               <p>
-                Ingresa tu clave maestra o inicia sesión con tu cuenta de Supabase Auth para gestionar el catálogo de Oasis Makeup.
+                Ingresa tu clave de administrador para gestionar el catálogo, precios, categorías y combos de Oasis Makeup.
               </p>
 
-              <div className="admin-login-tabs">
-                <button
-                  type="button"
-                  className={authMode === 'pin' ? 'active' : ''}
-                  onClick={() => setAuthMode('pin')}
-                >
-                  Clave Rápida (PIN)
-                </button>
-                <button
-                  type="button"
-                  className={authMode === 'supabase' ? 'active' : ''}
-                  onClick={() => setAuthMode('supabase')}
-                >
-                  Supabase Auth (Email)
-                </button>
-              </div>
-
               <form onSubmit={handleLoginSubmit} className="admin-login-form">
-                {authMode === 'pin' ? (
-                  <div className="admin-field">
-                    <label htmlFor="admin-pin-input">Clave de Administrador:</label>
-                    <input
-                      id="admin-pin-input"
-                      type="password"
-                      placeholder="••••••••••••"
-                      value={pinInput}
-                      onChange={(e) => setPinInput(e.target.value)}
-                      autoComplete="off"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="admin-field">
-                      <label htmlFor="admin-email-input">Correo Electrónico:</label>
-                      <input
-                        id="admin-email-input"
-                        type="email"
-                        placeholder="admin@oasismakeup.com"
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="admin-field">
-                      <label htmlFor="admin-pass-input">Contraseña:</label>
-                      <input
-                        id="admin-pass-input"
-                        type="password"
-                        placeholder="••••••••"
-                        value={passwordInput}
-                        onChange={(e) => setPasswordInput(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </>
-                )}
+                <div className="admin-field">
+                  <label htmlFor="admin-pin-input">Clave de Administrador:</label>
+                  <input
+                    id="admin-pin-input"
+                    type="password"
+                    placeholder="••••••••••••"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    autoComplete="off"
+                    autoFocus
+                  />
+                </div>
 
                 {authError && <p className="admin-login-error">{authError}</p>}
 
                 <button type="submit" className="admin-btn-primary" disabled={authLoading}>
                   {authLoading ? 'Verificando...' : 'Desbloquear Panel'}
                 </button>
-
-                {authMode === 'supabase' && (
-                  <button
-                    type="button"
-                    className="admin-btn-secondary"
-                    onClick={handleRegisterAdmin}
-                    disabled={authLoading}
-                  >
-                    Crear primer usuario Admin en Supabase
-                  </button>
-                )}
               </form>
             </div>
           </div>
@@ -668,7 +613,7 @@ export default function AdminPanel() {
                 className={`admin-tab ${activeTab === 'cloud' ? 'admin-tab--active' : ''}`}
                 onClick={() => setActiveTab('cloud')}
               >
-                ☁️ Base de Datos Supabase
+                🔐 Seguridad y Clave
               </button>
             </nav>
 
@@ -1661,144 +1606,55 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {/* ── PESTAÑA 4: CONEXIÓN SUPABASE Y SEGURIDAD ── */}
+            {/* ── PESTAÑA DE SEGURIDAD Y CAMBIO DE CLAVE ── */}
             {activeTab === 'cloud' && (
               <div className="admin-section">
+                <div className="admin-section__toolbar">
+                  <div>
+                    <h3>🔐 Seguridad del Panel y Cambio de Clave</h3>
+                    <p>
+                      Administra tu clave de acceso y las opciones de protección de la tienda.
+                    </p>
+                  </div>
+                </div>
+
                 <div className="admin-cloud-grid">
                   <div className="admin-cloud-card">
-                    <h3>☁️ Proyecto Supabase Vinculado</h3>
+                    <h3>🔑 Cambiar Clave de Administrador</h3>
                     <p>
-                      Tu proyecto <code>sbhtmqctxvaxtflzwndm</code> ya está conectado. Para terminar de activar la tabla <code>products</code> y el bucket de fotos en tu cuenta de Supabase, copia este bloque SQL y ejecútalo una sola vez en el <strong>SQL Editor</strong> de tu panel de Supabase:
+                      Escribe una nueva clave (mínimo 4 caracteres) para reemplazar la clave actual. Tu clave se guarda cifrada de forma segura.
                     </p>
-
-                    <div className="admin-sql-box">
-                      <pre>{SUPABASE_SETUP_SQL}</pre>
-                      <button
-                        type="button"
-                        className="admin-btn-primary"
-                        onClick={handleCopySql}
-                      >
-                        {copiedSql ? '✓ ¡SQL Copiado!' : '📋 Copiar SQL para Supabase'}
-                      </button>
-                    </div>
-
-                    <div className="admin-field" style={{ marginTop: '1rem' }}>
-                      <label>Project URL (o pega el link de tu navegador en Supabase)</label>
-                      <input
-                        type="text"
-                        placeholder="https://xxxxxxxx.supabase.co"
-                        value={sbUrl}
-                        onChange={(e) => setSbUrl(e.target.value)}
-                      />
-                    </div>
-                    <div className="admin-field">
-                      <label>Anon / Public Key</label>
-                      <input
-                        type="password"
-                        value={sbAnonKey}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setSbAnonKey(val)
-                          try {
-                            if (val.startsWith('eyJ')) {
-                              const payload = JSON.parse(
-                                atob(val.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
-                              )
-                              if (payload.ref) {
-                                setSbUrl(`https://${payload.ref}.supabase.co`)
-                              }
-                            }
-                          } catch {
-                            // ignore
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="admin-toolbar-btns">
-                      <button
-                        type="button"
-                        className="admin-btn-secondary"
-                        onClick={() => {
-                          const saved = saveSupabaseConfig(sbUrl, sbAnonKey)
-                          setSbUrl(saved.url)
-                          refreshFromCloud()
-                          showToast('Configuración de Supabase actualizada y sincronizada')
-                        }}
-                      >
-                        🔄 Guardar y Sincronizar con Supabase
-                      </button>
-                    </div>
-                    {syncMessage && (
-                      <p
-                        style={{
-                          marginTop: '0.75rem',
-                          fontSize: '0.8rem',
-                          padding: '0.6rem 0.85rem',
-                          borderRadius: '10px',
-                          background: syncStatus === 'cloud' ? '#e8f5e9' : '#fff3e0',
-                          color: syncStatus === 'cloud' ? '#1b5e20' : '#b45309',
-                          fontWeight: 600,
-                        }}
-                      >
-                        Estado: {syncMessage}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="admin-cloud-card">
-                    <h3>🔐 Seguridad del Panel Oculto</h3>
-                    <p>
-                      <strong>Protección Activa:</strong> El acceso por enlaces (<code>#admin</code>) y atajos de teclado ha sido bloqueado para evitar accesos curiosos.
-                    </p>
-                    <ul className="admin-secret-list">
-                      <li>
-                        <strong>Único método de apertura:</strong> Hacer <strong>5 clics rápidos seguidos</strong> sobre el logo de <em>OASIS MAKEUP</em> en el pie de página (Footer).
-                      </li>
-                      <li>
-                        <strong>Protección Anti-Fuerza Bruta:</strong> Bloqueo automático temporal tras 5 intentos fallidos y cifrado SHA-256 sin pistas en pantalla.
-                      </li>
-                    </ul>
 
                     <div className="admin-field" style={{ marginTop: '1.25rem' }}>
-                      <label>Cambiar Clave / PIN de Administrador</label>
+                      <label>Nueva Clave de Administrador</label>
                       <div className="admin-shades-adder">
                         <input
                           type="password"
-                          placeholder="Nueva clave (mín. 4 caracteres)"
+                          placeholder="Escribe tu nueva clave (mín. 4 caracteres)"
                           value={newPinValue}
                           onChange={(e) => setNewPinValue(e.target.value)}
                         />
                         <button
                           type="button"
-                          className="admin-btn-secondary"
+                          className="admin-btn-primary"
                           onClick={async () => {
                             if (await updateAdminPin(newPinValue)) {
                               setNewPinValue('')
-                              showToast('✓ Nueva clave cifrada y guardada con éxito')
+                              showToast('✓ Nueva clave guardada con éxito')
                             } else {
                               showToast('La clave debe tener al menos 4 caracteres')
                             }
                           }}
                         >
-                          Guardar PIN
+                          Guardar Nueva Clave
                         </button>
                       </div>
                     </div>
 
                     <hr style={{ margin: '1.5rem 0', opacity: 0.15 }} />
 
-                    <h4>Acciones de Mantenimiento</h4>
+                    <h4>Cerrar Sesión o Respaldar</h4>
                     <div className="admin-toolbar-btns" style={{ marginTop: '0.75rem' }}>
-                      <button
-                        type="button"
-                        className="admin-btn-outline"
-                        onClick={() => {
-                          restoreDefaultCatalog()
-                          showToast('Catálogo base restaurado')
-                        }}
-                      >
-                        Restaurar 6 Productos de Demostración
-                      </button>
                       <button
                         type="button"
                         className="admin-btn-delete"
@@ -1808,7 +1664,58 @@ export default function AdminPanel() {
                           closeAdminPanel()
                         }}
                       >
-                        🔒 Bloquear Sesión Admin
+                        🔒 Cerrar Sesión y Salir Ahora
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn-outline"
+                        onClick={handleExportJson}
+                      >
+                        💾 Descargar Copia de Seguridad
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="admin-cloud-card">
+                    <h3>🛡️ Reglas de Protección Activas</h3>
+                    <p>
+                      Tu panel cuenta con medidas automáticas para que ningún visitante de la tienda pueda entrar sin autorización:
+                    </p>
+                    <ul className="admin-secret-list">
+                      <li>
+                        <strong>Entrada secreta:</strong> El panel solo se abre haciendo <strong>5 clics seguidos</strong> sobre el logo <em>OASIS MAKEUP</em> al final de la página (pie de página).
+                      </li>
+                      <li>
+                        <strong>Cierre automático:</strong> Cada vez que sales del panel o pasan <strong>5 minutos sin actividad</strong>, la sesión se bloquea automáticamente y vuelve a pedir la clave.
+                      </li>
+                      <li>
+                        <strong>Bloqueo por intentos fallidos:</strong> Si alguien se equivoca de clave 5 veces seguidas, el acceso se bloquea temporalmente por seguridad.
+                      </li>
+                    </ul>
+
+                    <hr style={{ margin: '1.5rem 0', opacity: 0.15 }} />
+
+                    <h4>Mantenimiento de Catálogo</h4>
+                    <div className="admin-toolbar-btns" style={{ marginTop: '0.75rem' }}>
+                      <button
+                        type="button"
+                        className="admin-btn-outline"
+                        onClick={() => {
+                          refreshFromCloud()
+                          showToast('✓ Catálogo actualizado desde la nube')
+                        }}
+                      >
+                        🔄 Recargar Datos de la Tienda
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn-outline"
+                        onClick={() => {
+                          restoreDefaultCatalog()
+                          showToast('Catálogo de demostración restaurado')
+                        }}
+                      >
+                        Restaurar Productos de Ejemplo
                       </button>
                     </div>
                   </div>
