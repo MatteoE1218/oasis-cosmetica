@@ -52,6 +52,9 @@ export default function AdminPanel() {
   const {
     products,
     categories,
+    customCategories,
+    addCategory,
+    deleteCategory,
     featuredSlots,
     updateFeaturedSlots,
     packTypes,
@@ -102,6 +105,9 @@ export default function AdminPanel() {
   // Pack / Combo Form States
   const [packForm, setPackForm] = useState(EMPTY_PACK)
   const [isEditingPack, setIsEditingPack] = useState(false)
+
+  // Categories State
+  const [newCategoryInput, setNewCategoryInput] = useState('')
 
   // Cloud Config States
   const currentSbConfig = getSupabaseConfig()
@@ -652,6 +658,13 @@ export default function AdminPanel() {
               </button>
               <button
                 type="button"
+                className={`admin-tab ${activeTab === 'categories' ? 'admin-tab--active' : ''}`}
+                onClick={() => setActiveTab('categories')}
+              >
+                🏷️ Categorías ({customCategories?.length || 0})
+              </button>
+              <button
+                type="button"
                 className={`admin-tab ${activeTab === 'cloud' ? 'admin-tab--active' : ''}`}
                 onClick={() => setActiveTab('cloud')}
               >
@@ -830,8 +843,6 @@ export default function AdminPanel() {
                                   {c}
                                 </option>
                               ))}
-                            <option value="Cuidado Facial">Cuidado Facial</option>
-                            <option value="Accesorios">Accesorios</option>
                           </select>
                         </div>
 
@@ -1501,6 +1512,117 @@ export default function AdminPanel() {
                                 </button>
                               )}
                             </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── PESTAÑA DE CATEGORÍAS DEL CATÁLOGO ── */}
+            {activeTab === 'categories' && (
+              <div className="admin-section">
+                <div className="admin-section__toolbar">
+                  <div>
+                    <h3>🏷️ Administrar Categorías del Catálogo</h3>
+                    <p>
+                      Agrega nuevas categorías (ej. <em>Cuidado Facial, Brochas, Delineadores, Perfumes</em>) o quita las que no utilices. Los botones de filtro de la tienda y los selectores de subida se actualizan al instante.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="admin-cloud-grid">
+                  {/* Agregar nueva categoría */}
+                  <div className="admin-cloud-card">
+                    <h4>➕ Agregar Nueva Categoría</h4>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        if (!newCategoryInput.trim()) return
+                        const added = addCategory(newCategoryInput)
+                        if (added) {
+                          showToast(`✓ Categoría "${newCategoryInput.trim()}" agregada al catálogo`)
+                          setNewCategoryInput('')
+                        } else {
+                          showToast('Esa categoría ya existe en la lista')
+                        }
+                      }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginTop: '1rem' }}
+                    >
+                      <div className="admin-field">
+                        <label>Nombre de la Categoría *</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Cuidado Facial, Brochas, Iluminadores..."
+                          value={newCategoryInput}
+                          onChange={(e) => setNewCategoryInput(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <button type="submit" className="admin-btn-primary" style={{ alignSelf: 'flex-start' }}>
+                        ➕ Crear Categoría
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Listado de categorías activas */}
+                  <div className="admin-cloud-card">
+                    <h4>📋 Categorías Activas ({customCategories?.length || 0})</h4>
+                    <p style={{ fontSize: '0.84rem', color: '#6b5b63', marginBottom: '1rem' }}>
+                      El botón <strong>Todos</strong> siempre se muestra fijo al inicio del catálogo.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {customCategories?.map((catName) => {
+                        const count = products.filter((p) => p.category === catName).length
+                        return (
+                          <div
+                            key={catName}
+                            style={{
+                              padding: '0.9rem 1.15rem',
+                              borderRadius: '14px',
+                              border: '1px solid rgba(247, 37, 133, 0.16)',
+                              background: '#fffafd',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '1rem',
+                            }}
+                          >
+                            <div>
+                              <strong style={{ fontSize: '0.98rem' }}>{catName}</strong>
+                              <span
+                                style={{
+                                  marginLeft: '0.65rem',
+                                  fontSize: '0.76rem',
+                                  padding: '2px 9px',
+                                  borderRadius: '999px',
+                                  background: '#fce7f3',
+                                  color: '#be185d',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {count} producto(s)
+                              </span>
+                            </div>
+
+                            {customCategories.length > 1 && (
+                              <button
+                                type="button"
+                                className="admin-btn-delete"
+                                style={{ flex: '0 0 auto', padding: '0.45rem 0.9rem' }}
+                                onClick={() => {
+                                  if (deleteCategory(catName)) {
+                                    showToast(`Categoría "${catName}" eliminada`)
+                                  }
+                                }}
+                              >
+                                🗑️ Quitar
+                              </button>
+                            )}
                           </div>
                         )
                       })}

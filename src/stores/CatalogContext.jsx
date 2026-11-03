@@ -12,9 +12,11 @@ const CatalogContext = createContext(null)
 const LOCAL_CATALOG_KEY = 'oasis_catalog_products_v1'
 const FEATURED_SLOTS_KEY = 'oasis_featured_slots_v1'
 const PACK_TYPES_KEY = 'oasis_pack_types_v1'
+const CATEGORIES_STORAGE_KEY = 'oasis_catalog_categories_v1'
 const ADMIN_PIN_HASH_KEY = 'oasis_admin_pin_sha256_v1'
 // SHA-256 de la clave inicial ('oasis2026') sin exponer el texto plano en el bundle
 const DEFAULT_ADMIN_PIN_SHA256 = '498f865e81690fb45dc9a2251d761384f846b8bf6525eb499f180b1f74bc85b4'
+const DEFAULT_CATEGORIES_LIST = ['Labiales', 'Base', 'Sombras', 'Rubor', 'Máscara']
 
 async function sha256Hex(message) {
   const msgBuffer = new TextEncoder().encode(message)
@@ -181,10 +183,52 @@ export function CatalogProvider({ children }) {
     [packTypes, savePackTypes]
   )
 
-  const [isAdminOpen, setIsAdminOpen] = useState(false)
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    return sessionStorage.getItem('oasis_admin_unlocked') === 'true'
+  const [customCategories, setCustomCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_CATEGORIES_LIST
   })
+
+  const saveCategoriesList = useCallback((nextCats) => {
+    const clean = [...new Set(nextCats.map((c) => c.trim()).filter((c) => c && c !== 'Todos'))]
+    setCustomCategories(clean)
+    try {
+      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(clean))
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const addCategory = useCallback(
+    (newCatName) => {
+      const cleanName = (newCatName || '').trim()
+      if (!cleanName || cleanName.toLowerCase() === 'todos') return false
+      if (customCategories.some((c) => c.toLowerCase() === cleanName.toLowerCase())) return false
+      saveCategoriesList([...customCategories, cleanName])
+      return true
+    },
+    [customCategories, saveCategoriesList]
+  )
+
+  const deleteCategory = useCallback(
+    (catName) => {
+      if (customCategories.length <= 1) return false
+      const next = customCategories.filter((c) => c !== catName)
+      saveCategoriesList(next)
+      return true
+    },
+    [customCategories, saveCategoriesList]
+  )
+
+  const [isAdminOpen, setIsAdminOpen] = useState(false)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
   const [syncStatus, setSyncStatus] = useState('local') // 'local' | 'syncing' | 'cloud' | 'error'
   const [syncMessage, setSyncMessage] = useState('')
 
@@ -350,25 +394,54 @@ export function CatalogProvider({ children }) {
     return false
   }, [])
 
+  // Cerrar el panel bloquea inmediatamente la sesión para que siempre pida clave al volver a abrir
   const closeAdminPanel = useCallback(() => {
     setIsAdminOpen(false)
+    setIsAdminAuthenticated(false)
+    sessionStorage.removeItem('oasis_admin_unlocked')
     if (window.location.hash.toLowerCase().includes('admin')) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }, [])
 
+  // Timer de seguridad por inactividad (5 minutos sin mover mouse o escribir dentro del panel)
+  useEffect(() => {
+    if (!isAdminOpen || !isAdminAuthenticated) return
+
+    let inactivityTimer
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer)
+      inactivityTimer = setTimeout(() => {
+        setIsAdminAuthenticated(false)
+        setIsAdminOpen(false)
+        sessionStorage.removeItem('oasis_admin_unlocked')
+      }, 5 * 60 * 1000) // 5 minutos
+    }
+
+    resetTimer()
+    window.addEventListener('mousemove', resetTimer)
+    window.addEventListener('keydown', resetTimer)
+    window.addEventListener('click', resetTimer)
+
+    return () => {
+      clearTimeout(inactivityTimer)
+      window.removeEventListener('mousemove', resetTimer)
+      window.removeEventListener('keydown', resetTimer)
+      window.removeEventListener('click', resetTimer)
+    }
+  }, [isAdminOpen, isAdminAuthenticated])
+
   const categories = useMemo(() => {
-    const base = ['Todos', 'Labiales', 'Base', 'Sombras', 'Rubor', 'Máscara']
-    const extra = products
-      .map((p) => p.category)
-      .filter((c) => c && !base.includes(c))
-    return [...base, ...new Set(extra)]
-  }, [products])
+    return ['Todos', ...customCategories]
+  }, [customCategories])
 
   const value = useMemo(
     () => ({
       products,
       categories,
+      customCategories,
+      addCategory,
+      deleteCategory,
       featuredSlots,
       updateFeaturedSlots,
       packTypes,
@@ -394,6 +467,9 @@ export function CatalogProvider({ children }) {
     [
       products,
       categories,
+      customCategories,
+      addCategory,
+      deleteCategory,
       featuredSlots,
       updateFeaturedSlots,
       packTypes,
