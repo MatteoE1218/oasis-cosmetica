@@ -224,10 +224,14 @@ export default function AdminPanel() {
           uploadedUrls.push(processed.dataUrl)
         }
 
-        // Si el formulario aún no tiene nombre, extraerlo del nombre del archivo
+        // Si el formulario aún no tiene nombre, extraerlo del nombre del archivo o sugerencia visual
         if (!formData.name.trim()) {
-          const meta = parseFilenameMetadata(file.name)
-          const rule = autoClassifyProduct(meta.name, '')
+          const meta = parseFilenameMetadata(file.name, 1, processed.visualHint)
+          const rule = autoClassifyProduct(
+            meta.name,
+            '',
+            meta.isGeneric ? processed.visualHint?.category : ''
+          )
           const copy = autoGenerateCopy(meta.name, rule.category)
           setFormData((prev) => ({
             ...prev,
@@ -393,10 +397,14 @@ export default function AdminPanel() {
       const generatedItems = []
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const meta = parseFilenameMetadata(file.name)
-        const rule = autoClassifyProduct(meta.name, '')
-        const copy = autoGenerateCopy(meta.name, rule.category)
         const processed = await processImageFile(file)
+        const meta = parseFilenameMetadata(file.name, i + 1, processed.visualHint)
+        const rule = autoClassifyProduct(
+          meta.name,
+          '',
+          meta.isGeneric ? processed.visualHint?.category : ''
+        )
+        const copy = autoGenerateCopy(meta.name, rule.category)
 
         let imageUrl = processed.dataUrl
         try {
@@ -406,7 +414,7 @@ export default function AdminPanel() {
         }
 
         const shades =
-          processed.dominantColors.length >= 2
+          processed.dominantColors.length >= 1
             ? processed.dominantColors
             : rule.defaultShades
 
