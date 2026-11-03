@@ -14,8 +14,8 @@ const FEATURED_SLOTS_KEY = 'oasis_featured_slots_v1'
 const PACK_TYPES_KEY = 'oasis_pack_types_v1'
 const CATEGORIES_STORAGE_KEY = 'oasis_catalog_categories_v1'
 const ADMIN_PIN_HASH_KEY = 'oasis_admin_pin_sha256_v1'
-// SHA-256 de la clave inicial ('oasis2026') sin exponer el texto plano en el bundle
-const DEFAULT_ADMIN_PIN_SHA256 = '498f865e81690fb45dc9a2251d761384f846b8bf6525eb499f180b1f74bc85b4'
+// SHA-256 exacto de la clave inicial ('oasis2026')
+const DEFAULT_ADMIN_PIN_SHA256 = '9d613c8d749936d3e14ba5ac29a6e262ecdd4fa3adeeccc28cdc9661e828cd3e'
 const DEFAULT_CATEGORIES_LIST = ['Labiales', 'Base', 'Sombras', 'Rubor', 'Máscara']
 
 async function sha256Hex(message) {
