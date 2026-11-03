@@ -102,6 +102,7 @@ export default function AdminPanel() {
   const [bulkPreview, setBulkPreview] = useState([])
   const [isProcessingBulk, setIsProcessingBulk] = useState(false)
   const [replaceExistingOnBulk, setReplaceExistingOnBulk] = useState(false)
+  const [dragZone, setDragZone] = useState(null)
 
   // Pack / Combo Form States
   const [packForm, setPackForm] = useState(EMPTY_PACK)
@@ -199,8 +200,10 @@ export default function AdminPanel() {
     showToast(`Clasificado automáticamente como ${rule.category} ${rule.icon}`)
   }
 
-  const handleSingleImageUpload = async (e) => {
-    const files = Array.from(e.target.files || [])
+  const processSingleImageFiles = async (fileList) => {
+    const files = Array.from(fileList || []).filter((f) =>
+      f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif)$/i.test(f.name)
+    )
     if (files.length === 0) return
 
     setUploadingImage(true)
@@ -257,6 +260,11 @@ export default function AdminPanel() {
     } finally {
       setUploadingImage(false)
     }
+  }
+
+  const handleSingleImageUpload = async (e) => {
+    await processSingleImageFiles(e.target.files)
+    e.target.value = ''
   }
 
   const handleAddShade = () => {
@@ -329,8 +337,7 @@ export default function AdminPanel() {
     showToast(`✨ ${items.length} productos clasificados automáticamente`)
   }
 
-  const handleBulkCsvFile = async (e) => {
-    const file = e.target.files?.[0]
+  const processBulkDocumentFile = async (file) => {
     if (!file) return
 
     const isPdf =
@@ -357,7 +364,6 @@ export default function AdminPanel() {
         showToast('No se pudo procesar el archivo PDF seleccionado')
       } finally {
         setIsProcessingBulk(false)
-        e.target.value = ''
       }
       return
     }
@@ -367,11 +373,19 @@ export default function AdminPanel() {
     const items = parseBulkCatalogText(text)
     setBulkPreview((prev) => [...items, ...prev])
     showToast(`✨ Archivo leído: ${items.length} productos detectados y clasificados`)
+  }
+
+  const handleBulkCsvFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await processBulkDocumentFile(file)
     e.target.value = ''
   }
 
-  const handleBulkPhotosUpload = async (e) => {
-    const files = Array.from(e.target.files || [])
+  const processBulkPhotoFiles = async (fileList) => {
+    const files = Array.from(fileList || []).filter((f) =>
+      f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif)$/i.test(f.name)
+    )
     if (files.length === 0) return
 
     setIsProcessingBulk(true)
@@ -419,6 +433,36 @@ export default function AdminPanel() {
       showToast(`✨ ${generatedItems.length} fotos clasificadas con nombre, descripción y precio sugerido`)
     } finally {
       setIsProcessingBulk(false)
+    }
+  }
+
+  const handleBulkPhotosUpload = async (e) => {
+    await processBulkPhotoFiles(e.target.files)
+    e.target.value = ''
+  }
+
+  const handleBulkDropAny = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragZone(null)
+
+    const droppedFiles = Array.from(e.dataTransfer?.files || [])
+    if (droppedFiles.length === 0) return
+
+    const imageFiles = droppedFiles.filter(
+      (f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif)$/i.test(f.name)
+    )
+    const docFiles = droppedFiles.filter(
+      (f) =>
+        f.type === 'application/pdf' ||
+        /\.(pdf|csv|txt|tsv)$/i.test(f.name)
+    )
+
+    if (imageFiles.length > 0) {
+      await processBulkPhotoFiles(imageFiles)
+    }
+    for (const docFile of docFiles) {
+      await processBulkDocumentFile(docFile)
     }
   }
 
@@ -945,8 +989,26 @@ export default function AdminPanel() {
                       <div className="admin-field">
                         <label>Fotografías del Producto</label>
                         <div
-                          className="admin-dropzone"
+                          className={`admin-dropzone ${
+                            dragZone === 'single' ? 'admin-dropzone--dragging' : ''
+                          }`}
                           onClick={() => singleFileInputRef.current?.click()}
+                          onDragOver={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (dragZone !== 'single') setDragZone('single')
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (dragZone === 'single') setDragZone(null)
+                          }}
+                          onDrop={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setDragZone(null)
+                            await processSingleImageFiles(e.dataTransfer?.files)
+                          }}
                         >
                           <input
                             ref={singleFileInputRef}
@@ -959,7 +1021,11 @@ export default function AdminPanel() {
                           {formData.image ? (
                             <div className="admin-dropzone__preview">
                               <img src={formData.image} alt="Vista previa" />
-                              <span>{uploadingImage ? 'Subiendo...' : 'Haz clic para añadir o cambiar foto'}</span>
+                              <span>
+                                {uploadingImage
+                                  ? 'Subiendo...'
+                                  : 'Arrastra más fotos aquí o haz clic para añadir/cambiar'}
+                              </span>
                             </div>
                           ) : (
                             <div className="admin-dropzone__empty">
@@ -967,9 +1033,9 @@ export default function AdminPanel() {
                               <p>
                                 {uploadingImage
                                   ? 'Procesando imagen...'
-                                  : 'Haz clic aquí para subir fotos desde tu dispositivo'}
+                                  : 'Arrastra y suelta tus fotos aquí o haz clic para subir'}
                               </p>
-                              <small>Extrae automáticamente los tonos reales de la foto</small>
+                              <small>Puedes soltar 1 o varias fotos a la vez • Extrae los tonos reales</small>
                             </div>
                           )}
                         </div>
@@ -1109,8 +1175,21 @@ export default function AdminPanel() {
                 <div className="admin-bulk-inputs">
                   {/* Opción A: Subir lote de fotos */}
                   <div
-                    className="admin-bulk-box"
+                    className={`admin-bulk-box ${
+                      dragZone === 'bulk-photos' ? 'admin-bulk-box--dragging' : ''
+                    }`}
                     onClick={() => bulkPhotosInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (dragZone !== 'bulk-photos') setDragZone('bulk-photos')
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (dragZone === 'bulk-photos') setDragZone(null)
+                    }}
+                    onDrop={handleBulkDropAny}
                   >
                     <input
                       ref={bulkPhotosInputRef}
@@ -1121,19 +1200,34 @@ export default function AdminPanel() {
                       onChange={handleBulkPhotosUpload}
                     />
                     <span className="admin-bulk-box__icon">🖼️</span>
-                    <h4>Opción 1: Subir Lote de Fotos del Catálogo</h4>
+                    <h4>Opción 1: Arrastrar o Subir Lote de Fotos</h4>
                     <p>
-                      Selecciona 5, 20 o 100 fotos de productos a la vez. Extraemos el nombre y precio del archivo, detectamos los tonos reales de la imagen y redactamos la descripción automáticamente.
+                      Arrastra y suelta aquí tus fotos (5, 20 o 100 a la vez) o haz clic para elegirlas. Extraemos el nombre y precio del archivo, detectamos los tonos reales y redactamos la descripción automáticamente.
                     </p>
                     <span className="admin-btn-secondary">
-                      {isProcessingBulk ? 'Analizando fotos...' : 'Seleccionar Múltiples Fotos'}
+                      {isProcessingBulk ? 'Analizando archivos...' : 'Arrastrar o Seleccionar Fotos'}
                     </span>
                   </div>
 
                   {/* Opción B: Archivo PDF / CSV / Excel o Texto pegado */}
-                  <div className="admin-bulk-box admin-bulk-box--text">
+                  <div
+                    className={`admin-bulk-box admin-bulk-box--text ${
+                      dragZone === 'bulk-docs' ? 'admin-bulk-box--dragging' : ''
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (dragZone !== 'bulk-docs') setDragZone('bulk-docs')
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (dragZone === 'bulk-docs') setDragZone(null)
+                    }}
+                    onDrop={handleBulkDropAny}
+                  >
                     <div className="admin-bulk-box__header">
-                      <h4>Opción 2: Subir PDF / CSV o Pegar Desde Excel / WhatsApp</h4>
+                      <h4>Opción 2: Arrastrar o Subir PDF / CSV / Excel</h4>
                       <button
                         type="button"
                         className="admin-btn-outline"
@@ -1142,7 +1236,7 @@ export default function AdminPanel() {
                       >
                         {isProcessingBulk
                           ? '⏳ Leyendo archivo...'
-                          : '📄 Subir archivo .PDF / .CSV / .TXT'}
+                          : '📄 Subir o Soltar .PDF / .CSV / .TXT'}
                       </button>
                       <input
                         ref={bulkCsvInputRef}
@@ -1241,8 +1335,30 @@ export default function AdminPanel() {
 
                             return (
                             <tr key={item.id}>
-                              <td className="admin-bulk-col-photos">
-                                <div className="admin-bulk-photos-cell">
+                              <td
+                                className="admin-bulk-col-photos"
+                                onDragOver={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (dragZone !== `row-${idx}`) setDragZone(`row-${idx}`)
+                                }}
+                                onDragLeave={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  if (dragZone === `row-${idx}`) setDragZone(null)
+                                }}
+                                onDrop={async (e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setDragZone(null)
+                                  await handleBulkItemPhotoChange(idx, e.dataTransfer?.files, true)
+                                }}
+                              >
+                                <div
+                                  className={`admin-bulk-photos-cell ${
+                                    dragZone === `row-${idx}` ? 'admin-bulk-photos-cell--dragging' : ''
+                                  }`}
+                                >
                                   <div className="admin-bulk-thumbs-list">
                                     {itemGallery.length > 0 ? (
                                       itemGallery.map((imgUrl, pIdx) => (
