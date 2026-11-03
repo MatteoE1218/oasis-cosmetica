@@ -130,7 +130,9 @@ export async function supabaseSignOut() {
 }
 
 /* ── Database (PostgREST: tabla `products`) ── */
-export async function fetchProductsFromSupabase() {
+export const STORE_SETTINGS_ROW_ID = '__oasis_store_settings__'
+
+export async function fetchStoreDataFromSupabase() {
   const { url } = getSupabaseConfig()
   const res = await fetch(`${url}/rest/v1/products?select=*&order=created_at.asc`, {
     method: 'GET',
@@ -141,7 +143,82 @@ export async function fetchProductsFromSupabase() {
     throw new Error(errText || `Error HTTP ${res.status}`)
   }
   const rows = await res.json()
-  return rows.map(mapDbRowToProduct)
+  let settings = null
+  const productRows = []
+
+  for (const row of rows) {
+    if (row.id === STORE_SETTINGS_ROW_ID) {
+      try {
+        settings = row.description ? JSON.parse(row.description) : null
+      } catch {
+        settings = null
+      }
+    } else {
+      productRows.push(mapDbRowToProduct(row))
+    }
+  }
+
+  return {
+    products: productRows,
+    settings,
+  }
+}
+
+export async function fetchProductsFromSupabase() {
+  const { products } = await fetchStoreDataFromSupabase()
+  return products
+}
+
+export async function upsertStoreSettingsToSupabase(settingsObj) {
+  const { url } = getSupabaseConfig()
+  const payload = {
+    id: STORE_SETTINGS_ROW_ID,
+    name: '__OASIS_SETTINGS__',
+    category: '__SYSTEM__',
+    price: 0,
+    stock: 0,
+    tagline: 'Configuración global sincronizada de Oasis Makeup',
+    description: JSON.stringify({
+      ...settingsObj,
+      updatedAt: Date.now(),
+    }),
+    shades: [],
+    default_shade: 0,
+    badge: null,
+    icon: '⚙️',
+    gradient: '',
+    image_url: null,
+    images: [],
+    include_in_pack: false,
+  }
+  const res = await fetch(`${url}/rest/v1/products`, {
+    method: 'POST',
+    headers: getHeaders({
+      Prefer: 'resolution=merge-duplicates,return=representation',
+    }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || `Error guardando ajustes (${res.status})`)
+  }
+  return true
+}
+
+export async function deleteAllProductsFromSupabase() {
+  const { url } = getSupabaseConfig()
+  const res = await fetch(
+    `${url}/rest/v1/products?id=neq.${encodeURIComponent(STORE_SETTINGS_ROW_ID)}`,
+    {
+      method: 'DELETE',
+      headers: getHeaders(),
+    }
+  )
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || `Error limpiando catálogo anterior (${res.status})`)
+  }
+  return true
 }
 
 export async function upsertProductToSupabase(product) {

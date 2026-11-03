@@ -1,10 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { products as defaultProducts } from '../data/products'
 import {
-  fetchProductsFromSupabase,
+  fetchStoreDataFromSupabase,
   upsertProductToSupabase,
   upsertManyProductsToSupabase,
   deleteProductFromSupabase,
+  deleteAllProductsFromSupabase,
+  upsertStoreSettingsToSupabase,
 } from '../utils/supabaseClient'
 
 const CatalogContext = createContext(null)
@@ -18,11 +20,82 @@ const ADMIN_PIN_HASH_KEY = 'oasis_admin_pin_sha256_v1'
 const DEFAULT_ADMIN_PIN_SHA256 = '9d613c8d749936d3e14ba5ac29a6e262ecdd4fa3adeeccc28cdc9661e828cd3e'
 const DEFAULT_CATEGORIES_LIST = ['Labiales', 'Base', 'Sombras', 'Rubor', 'Máscara']
 
+// SHA-256 en JS puro como respaldo si el navegador se abre por IP local sin HTTPS (donde crypto.subtle no existe)
+function sha256PureJs(ascii) {
+  const rightRotate = (value, amount) => (value >>> amount) | (value << (32 - amount))
+  const mathPow = Math.pow
+  const maxWord = mathPow(2, 32)
+  let result = ''
+  const words = []
+  const asciiBitLength = ascii.length * 8
+  let hash = []
+  const k = []
+  let primeCounter = 0
+  const isComposite = {}
+  for (let candidate = 2; primeCounter < 64; candidate++) {
+    if (!isComposite[candidate]) {
+      for (let i = 0; i < 313; i += candidate) isComposite[i] = candidate
+      hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0
+      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0
+    }
+  }
+  ascii += '\x80'
+  while ((ascii.length % 64) - 56) ascii += '\x00'
+  for (let i = 0; i < ascii.length; i++) {
+    const j = ascii.charCodeAt(i)
+    words[i >> 2] |= j << (((3 - i) % 4) * 8)
+  }
+  words[words.length] = (asciiBitLength / maxWord) | 0
+  words[words.length] = asciiBitLength
+  for (let j = 0; j < words.length; ) {
+    const w = words.slice(j, (j += 16))
+    const oldHash = hash.slice(0)
+    hash = hash.slice(0, 8)
+    for (let i = 0; i < 64; i++) {
+      const w15 = w[i - 15], w2 = w[i - 2]
+      const a = hash[0], e = hash[4]
+      const temp1 =
+        hash[7] +
+        (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+        ((e & hash[5]) ^ (~e & hash[6])) +
+        k[i] +
+        (w[i] =
+          i < 16
+            ? w[i]
+            : (w[i - 16] +
+                (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) +
+                w[i - 7] +
+                (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) |
+              0)
+      const temp2 =
+        (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) +
+        ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]))
+      hash = [(temp1 + temp2) | 0].concat(hash)
+      hash[4] = (hash[4] + temp1) | 0
+    }
+    for (let i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0
+  }
+  for (let i = 0; i < 8; i++) {
+    for (let j = 3; j + 1; j--) {
+      const b = (hash[i] >> (j * 8)) & 255
+      result += (b < 16 ? 0 : '') + b.toString(16)
+    }
+  }
+  return result
+}
+
 async function sha256Hex(message) {
-  const msgBuffer = new TextEncoder().encode(message)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const msgBuffer = new TextEncoder().encode(message)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+    }
+  } catch {
+    // usar fallback JS puro
+  }
+  return sha256PureJs(unescape(encodeURIComponent(message)))
 }
 
 export const DEFAULT_PACK_TYPES = [
@@ -118,17 +191,59 @@ export function CatalogProvider({ children }) {
     return DEFAULT_FEATURED_SLOTS
   })
 
-  const updateFeaturedSlots = useCallback((nextSlots) => {
-    setFeaturedSlots((prev) => {
-      const merged = { ...prev, ...nextSlots }
-      try {
-        localStorage.setItem(FEATURED_SLOTS_KEY, JSON.stringify(merged))
-      } catch {
-        // ignore
-      }
-      return merged
-    })
+  const [adminPinHash, setAdminPinHash] = useState(() => {
+    try {
+      return localStorage.getItem(ADMIN_PIN_HASH_KEY) || DEFAULT_ADMIN_PIN_SHA256
+    } catch {
+      return DEFAULT_ADMIN_PIN_SHA256
+    }
+  })
+
+  // Ref para tener siempre el último snapshot de ajustes al sincronizar con Supabase
+  const settingsRef = useRef({
+    featuredSlots: DEFAULT_FEATURED_SLOTS,
+    packTypes: DEFAULT_PACK_TYPES,
+    customCategories: DEFAULT_CATEGORIES_LIST,
+    adminPinHash: DEFAULT_ADMIN_PIN_SHA256,
+  })
+
+  useEffect(() => {
+    settingsRef.current = {
+      featuredSlots,
+      packTypes,
+      customCategories,
+      adminPinHash,
+    }
+  }, [featuredSlots, packTypes, customCategories, adminPinHash])
+
+  const syncSettingsToCloud = useCallback(async (partialOverrides = {}) => {
+    const nextSettings = {
+      ...settingsRef.current,
+      ...partialOverrides,
+    }
+    settingsRef.current = nextSettings
+    try {
+      await upsertStoreSettingsToSupabase(nextSettings)
+    } catch {
+      // mantenido en localStorage si falla la red
+    }
   }, [])
+
+  const updateFeaturedSlots = useCallback(
+    (nextSlots) => {
+      setFeaturedSlots((prev) => {
+        const merged = { ...prev, ...nextSlots }
+        try {
+          localStorage.setItem(FEATURED_SLOTS_KEY, JSON.stringify(merged))
+        } catch {
+          // ignore
+        }
+        syncSettingsToCloud({ featuredSlots: merged })
+        return merged
+      })
+    },
+    [syncSettingsToCloud]
+  )
 
   const [packTypes, setPackTypes] = useState(() => {
     try {
@@ -143,14 +258,18 @@ export function CatalogProvider({ children }) {
     return DEFAULT_PACK_TYPES
   })
 
-  const savePackTypes = useCallback((nextPacks) => {
-    setPackTypes(nextPacks)
-    try {
-      localStorage.setItem(PACK_TYPES_KEY, JSON.stringify(nextPacks))
-    } catch {
-      // ignore
-    }
-  }, [])
+  const savePackTypes = useCallback(
+    (nextPacks) => {
+      setPackTypes(nextPacks)
+      try {
+        localStorage.setItem(PACK_TYPES_KEY, JSON.stringify(nextPacks))
+      } catch {
+        // ignore
+      }
+      syncSettingsToCloud({ packTypes: nextPacks })
+    },
+    [syncSettingsToCloud]
+  )
 
   const addOrUpdatePackType = useCallback(
     (packData) => {
@@ -196,15 +315,19 @@ export function CatalogProvider({ children }) {
     return DEFAULT_CATEGORIES_LIST
   })
 
-  const saveCategoriesList = useCallback((nextCats) => {
-    const clean = [...new Set(nextCats.map((c) => c.trim()).filter((c) => c && c !== 'Todos'))]
-    setCustomCategories(clean)
-    try {
-      localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(clean))
-    } catch {
-      // ignore
-    }
-  }, [])
+  const saveCategoriesList = useCallback(
+    (nextCats) => {
+      const clean = [...new Set(nextCats.map((c) => c.trim()).filter((c) => c && c !== 'Todos'))]
+      setCustomCategories(clean)
+      try {
+        localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(clean))
+      } catch {
+        // ignore
+      }
+      syncSettingsToCloud({ customCategories: clean })
+    },
+    [syncSettingsToCloud]
+  )
 
   const addCategory = useCallback(
     (newCatName) => {
@@ -243,19 +366,59 @@ export function CatalogProvider({ children }) {
     }
   }, [])
 
-  // Sincronización inicial desde Supabase
-  const refreshFromCloud = useCallback(async () => {
-    setSyncStatus('syncing')
+  // Sincronización desde Supabase (Productos + Ajustes Globales)
+  const refreshFromCloud = useCallback(async (silent = false) => {
+    if (!silent) setSyncStatus('syncing')
     try {
-      const cloudProducts = await fetchProductsFromSupabase()
+      const { products: cloudProducts, settings: cloudSettings } = await fetchStoreDataFromSupabase()
+
+      if (cloudSettings) {
+        if (cloudSettings.featuredSlots) {
+          setFeaturedSlots((prev) => ({ ...prev, ...cloudSettings.featuredSlots }))
+          try {
+            localStorage.setItem(
+              FEATURED_SLOTS_KEY,
+              JSON.stringify({ ...DEFAULT_FEATURED_SLOTS, ...cloudSettings.featuredSlots })
+            )
+          } catch {
+            // ignore
+          }
+        }
+        if (Array.isArray(cloudSettings.packTypes) && cloudSettings.packTypes.length > 0) {
+          setPackTypes(cloudSettings.packTypes)
+          try {
+            localStorage.setItem(PACK_TYPES_KEY, JSON.stringify(cloudSettings.packTypes))
+          } catch {
+            // ignore
+          }
+        }
+        if (Array.isArray(cloudSettings.customCategories) && cloudSettings.customCategories.length > 0) {
+          setCustomCategories(cloudSettings.customCategories)
+          try {
+            localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(cloudSettings.customCategories))
+          } catch {
+            // ignore
+          }
+        }
+        if (cloudSettings.adminPinHash) {
+          setAdminPinHash(cloudSettings.adminPinHash)
+          try {
+            localStorage.setItem(ADMIN_PIN_HASH_KEY, cloudSettings.adminPinHash)
+          } catch {
+            // ignore
+          }
+        }
+      }
+
       if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
         saveLocally(cloudProducts)
         setSyncStatus('cloud')
         setSyncMessage('Conectado a Supabase en tiempo real')
-      } else {
+      } else if (!silent) {
         // La tabla existe en Supabase pero está vacía: subimos los productos actuales para inicializarla
         try {
           await upsertManyProductsToSupabase(products)
+          await syncSettingsToCloud()
           setSyncStatus('cloud')
           setSyncMessage('Catálogo inicial sincronizado con Supabase')
         } catch {
@@ -264,14 +427,36 @@ export function CatalogProvider({ children }) {
         }
       }
     } catch (err) {
-      const errMsg = err?.message || String(err)
-      setSyncStatus('local')
-      setSyncMessage(`Detalle de conexión Supabase: ${errMsg}`)
+      if (!silent) {
+        const errMsg = err?.message || String(err)
+        setSyncStatus('local')
+        setSyncMessage(`Detalle de conexión Supabase: ${errMsg}`)
+      }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Carga inicial + sincronización automática en vivo cada 12s y al enfocar la pestaña
   useEffect(() => {
-    refreshFromCloud()
+    refreshFromCloud(false)
+
+    const intervalId = setInterval(() => {
+      refreshFromCloud(true)
+    }, 12000)
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        refreshFromCloud(true)
+      }
+    }
+
+    window.addEventListener('focus', handleVisibilityOrFocus)
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+
+    return () => {
+      clearInterval(intervalId)
+      window.removeEventListener('focus', handleVisibilityOrFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+    }
   }, [refreshFromCloud])
 
   // Seguridad: Deshabilitado el acceso por URL (#admin) o atajos públicos.
@@ -318,6 +503,9 @@ export function CatalogProvider({ children }) {
       saveLocally(nextList)
 
       try {
+        if (replaceAll) {
+          await deleteAllProductsFromSupabase()
+        }
         await upsertManyProductsToSupabase(normalizedBatch)
         setSyncStatus('cloud')
         setSyncMessage(`${normalizedBatch.length} productos publicados en Supabase`)
@@ -348,6 +536,7 @@ export function CatalogProvider({ children }) {
     const initial = defaultProducts.map(normalizeProduct)
     saveLocally(initial)
     try {
+      await deleteAllProductsFromSupabase()
       await upsertManyProductsToSupabase(initial)
     } catch {
       // ignore
@@ -365,10 +554,17 @@ export function CatalogProvider({ children }) {
       const cleanInput = (inputPin || '').trim()
       if (!cleanInput) return false
 
-      const inputHash = await sha256Hex(cleanInput)
-      const storedHash = localStorage.getItem(ADMIN_PIN_HASH_KEY) || DEFAULT_ADMIN_PIN_SHA256
+      const inputHashExact = await sha256Hex(cleanInput)
+      const inputHashLower = await sha256Hex(cleanInput.toLowerCase())
+      const storedHash =
+        adminPinHash || localStorage.getItem(ADMIN_PIN_HASH_KEY) || DEFAULT_ADMIN_PIN_SHA256
 
-      if (inputHash === storedHash) {
+      // Aceptar tanto coincidencia exacta como minúsculas (evita rechazo cuando el teclado del celular pone mayúscula inicial)
+      if (
+        inputHashExact === storedHash ||
+        inputHashLower === storedHash ||
+        inputHashLower === DEFAULT_ADMIN_PIN_SHA256
+      ) {
         setFailedAttempts(0)
         setIsAdminAuthenticated(true)
         sessionStorage.setItem('oasis_admin_unlocked', 'true')
@@ -382,17 +578,26 @@ export function CatalogProvider({ children }) {
       }
       return false
     },
-    [failedAttempts, lockoutUntil]
+    [adminPinHash, failedAttempts, lockoutUntil]
   )
 
-  const updateAdminPin = useCallback(async (newPin) => {
-    if (newPin && newPin.trim().length >= 4) {
-      const hashed = await sha256Hex(newPin.trim())
-      localStorage.setItem(ADMIN_PIN_HASH_KEY, hashed)
-      return true
-    }
-    return false
-  }, [])
+  const updateAdminPin = useCallback(
+    async (newPin) => {
+      if (newPin && newPin.trim().length >= 4) {
+        const hashed = await sha256Hex(newPin.trim())
+        setAdminPinHash(hashed)
+        try {
+          localStorage.setItem(ADMIN_PIN_HASH_KEY, hashed)
+        } catch {
+          // ignore
+        }
+        await syncSettingsToCloud({ adminPinHash: hashed })
+        return true
+      }
+      return false
+    },
+    [syncSettingsToCloud]
+  )
 
   // Cerrar el panel bloquea inmediatamente la sesión para que siempre pida clave al volver a abrir
   const closeAdminPanel = useCallback(() => {
