@@ -1474,21 +1474,23 @@ export default function AdminPanel() {
                                   }}
                                 />
                               </td>
-                              <td>
+                              <td className="admin-bulk-col-price">
                                 <input
                                   type="number"
                                   step="0.01"
-                                  value={item.price}
+                                  min="0"
+                                  value={item.price ?? 0}
                                   onChange={(e) =>
                                     handleUpdateBulkItem(idx, 'price', parseFloat(e.target.value) || 0)
                                   }
                                   className="admin-input-narrow"
                                 />
                               </td>
-                              <td>
+                              <td className="admin-bulk-col-stock">
                                 <input
                                   type="number"
-                                  value={item.stock}
+                                  min="0"
+                                  value={item.stock ?? 25}
                                   onChange={(e) =>
                                     handleUpdateBulkItem(idx, 'stock', parseInt(e.target.value, 10) || 0)
                                   }

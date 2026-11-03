@@ -893,18 +893,28 @@
 }
 
 .admin-bulk-col-name {
-  min-width: 210px;
-  width: 24%;
+  min-width: 195px;
+  width: 21%;
 }
 
 .admin-bulk-col-category {
-  min-width: 150px;
-  width: 14%;
+  min-width: 135px;
+  width: 13%;
 }
 
 .admin-bulk-col-desc {
-  min-width: 340px;
-  width: 42%;
+  min-width: 280px;
+  width: 32%;
+}
+
+.admin-bulk-col-price {
+  min-width: 110px;
+  width: 110px;
+}
+
+.admin-bulk-col-stock {
+  min-width: 95px;
+  width: 95px;
 }
 
 .admin-bulk-table input,
@@ -913,9 +923,11 @@
   width: 100%;
   padding: 0.5rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  font-size: 0.84rem;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  font-size: 0.86rem;
   font-family: inherit;
+  color: #1f1218;
+  background: #ffffff;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -929,6 +941,7 @@
   resize: vertical;
   field-sizing: content;
   min-height: 44px;
+  color: #1f1218;
   background: #fffdfd;
 }
 
@@ -942,7 +955,23 @@
 }
 
 .admin-input-narrow {
-  max-width: 85px;
+  min-width: 96px !important;
+  width: 96px !important;
+  padding: 0.55rem 0.5rem !important;
+  font-size: 0.96rem !important;
+  font-weight: 700 !important;
+  color: #1a0e14 !important;
+  background: #ffffff !important;
+  border: 1.5px solid rgba(247, 37, 133, 0.35) !important;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.admin-input-narrow::-webkit-outer-spin-button,
+.admin-input-narrow::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .admin-bulk-col-photos {
