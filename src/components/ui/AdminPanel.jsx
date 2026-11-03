@@ -3,6 +3,7 @@ import { useCatalog } from '../../stores/CatalogContext'
 import {
   autoClassifyProduct,
   autoGenerateCopy,
+  extractCatalogFromPdfFile,
   parseBulkCatalogText,
   parseFilenameMetadata,
   processImageFile,
@@ -331,11 +332,42 @@ export default function AdminPanel() {
   const handleBulkCsvFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const isPdf =
+      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+
+    if (isPdf) {
+      setIsProcessingBulk(true)
+      try {
+        const result = await extractCatalogFromPdfFile(file)
+        if (result.text) {
+          setBulkText(result.text)
+        }
+        if (result.items.length > 0) {
+          setBulkPreview((prev) => [...result.items, ...prev])
+          const imgMsg =
+            result.embeddedImagesCount > 0
+              ? ` y ${result.embeddedImagesCount} foto(s) extraída(s)`
+              : ''
+          showToast(`✨ PDF leído: ${result.items.length} productos clasificados${imgMsg}`)
+        } else {
+          showToast('No se detectaron líneas de productos en este PDF. Puedes pegar el texto manualmente.')
+        }
+      } catch {
+        showToast('No se pudo procesar el archivo PDF seleccionado')
+      } finally {
+        setIsProcessingBulk(false)
+        e.target.value = ''
+      }
+      return
+    }
+
     const text = await file.text()
     setBulkText(text)
     const items = parseBulkCatalogText(text)
     setBulkPreview((prev) => [...items, ...prev])
     showToast(`✨ Archivo leído: ${items.length} productos detectados y clasificados`)
+    e.target.value = ''
   }
 
   const handleBulkPhotosUpload = async (e) => {
@@ -1098,21 +1130,24 @@ export default function AdminPanel() {
                     </span>
                   </div>
 
-                  {/* Opción B: Archivo CSV / Excel o Texto pegado */}
+                  {/* Opción B: Archivo PDF / CSV / Excel o Texto pegado */}
                   <div className="admin-bulk-box admin-bulk-box--text">
                     <div className="admin-bulk-box__header">
-                      <h4>Opción 2: Pegar Desde Excel / WhatsApp / PDF o Subir CSV</h4>
+                      <h4>Opción 2: Subir PDF / CSV o Pegar Desde Excel / WhatsApp</h4>
                       <button
                         type="button"
                         className="admin-btn-outline"
+                        disabled={isProcessingBulk}
                         onClick={() => bulkCsvInputRef.current?.click()}
                       >
-                        📄 Subir archivo .CSV / .TXT
+                        {isProcessingBulk
+                          ? '⏳ Leyendo archivo...'
+                          : '📄 Subir archivo .PDF / .CSV / .TXT'}
                       </button>
                       <input
                         ref={bulkCsvInputRef}
                         type="file"
-                        accept=".csv,.txt,.tsv"
+                        accept=".pdf,.csv,.txt,.tsv,application/pdf"
                         hidden
                         onChange={handleBulkCsvFile}
                       />

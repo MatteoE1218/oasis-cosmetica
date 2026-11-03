@@ -502,3 +502,306 @@ export function parseBulkCatalogText(rawText) {
   return parsedProducts
 }
 
+/**
+ * Carga PDF.js bajo demanda en el navegador para extraer texto estructurado por líneas y páginas
+ */
+let pdfJsPromise = null
+function loadPdfJs() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('No window'))
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib)
+  if (pdfJsPromise) return pdfJsPromise
+
+  pdfJsPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
+    script.async = true
+    script.onload = () => {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+        resolve(window.pdfjsLib)
+      } else {
+        reject(new Error('PDF.js no disponible'))
+      }
+    }
+    script.onerror = () => reject(new Error('No se pudo cargar PDF.js'))
+    document.head.appendChild(script)
+  })
+  return pdfJsPromise
+}
+
+/**
+ * Extrae imágenes JPEG incrustadas directamente desde el binario de un archivo PDF
+ */
+async function extractEmbeddedJpegsFromPdfBuffer(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer)
+  const rawBlobs = []
+  let i = 0
+
+  while (i < bytes.length - 4) {
+    // Buscar inicio de JPEG (FF D8 FF)
+    if (bytes[i] === 0xff && bytes[i + 1] === 0xd8 && bytes[i + 2] === 0xff) {
+      let end = i + 3
+      let foundEnd = false
+      while (end < bytes.length - 1) {
+        if (bytes[end] === 0xff && bytes[end + 1] === 0xd9) {
+          end += 2
+          foundEnd = true
+          break
+        }
+        end++
+      }
+      if (foundEnd) {
+        const length = end - i
+        // Ignorar miniaturas muy pequeñas (< 2.5 KB)
+        if (length > 2500 && length < 8 * 1024 * 1024) {
+          const slice = bytes.slice(i, end)
+          rawBlobs.push(new Blob([slice], { type: 'image/jpeg' }))
+        }
+        i = end
+        if (rawBlobs.length >= 60) break
+        continue
+      }
+    }
+    i++
+  }
+
+  const processedImages = []
+  for (const blob of rawBlobs) {
+    try {
+      const processed = await processImageFile(blob, 700)
+      if (processed.width >= 60 && processed.height >= 60) {
+        processedImages.push(processed)
+      }
+    } catch {
+      // ignorar segmento corrupto
+    }
+  }
+  return processedImages
+}
+
+/**
+ * Fallback nativo (sin librerías externas) para extraer texto de streams PDF (incluyendo FlateDecode)
+ */
+async function extractTextFromPdfBufferNative(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer)
+  const latin1Decoder = new TextDecoder('latin1')
+  const rawPdfStr = latin1Decoder.decode(bytes)
+
+  const decodePdfLiteral = (str) =>
+    str
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\r')
+      .replace(/\\t/g, ' ')
+      .replace(/\\\(/g, '(')
+      .replace(/\\\)/g, ')')
+      .replace(/\\\\/g, '\\')
+
+  const decodePdfHex = (hexStr) => {
+    const clean = hexStr.replace(/\s+/g, '')
+    let out = ''
+    for (let i = 0; i < clean.length; i += 2) {
+      const code = parseInt(clean.slice(i, i + 2), 16)
+      if (!Number.isNaN(code) && code >= 32) {
+        out += String.fromCharCode(code)
+      }
+    }
+    return out
+  }
+
+  const parseContentStreamText = (content) => {
+    const lines = []
+    let currentLine = []
+
+    const flushLine = () => {
+      if (currentLine.length > 0) {
+        const joined = currentLine.join(' ').replace(/\s{2,}/g, ' ').trim()
+        if (joined) lines.push(joined)
+        currentLine = []
+      }
+    }
+
+    const tokenRegex = /\((?:\\.|[^\\()])*\)\s*Tj|<([0-9A-Fa-f\s]+)>\s*Tj|\[((?:\\.|[^\]])*)\]\s*TJ|\bTd\b|\bTD\b|\bT\*\b/g
+    let match
+    while ((match = tokenRegex.exec(content)) !== null) {
+      const token = match[0]
+      if (token === 'Td' || token === 'TD' || token === 'T*') {
+        flushLine()
+      } else if (match[1] !== undefined) {
+        const t = decodePdfHex(match[1]).trim()
+        if (t) currentLine.push(t)
+      } else if (match[2] !== undefined) {
+        const arrContent = match[2]
+        const subMatches = arrContent.match(/\((?:\\.|[^\\()])*\)|<([0-9A-Fa-f\s]+)>/g) || []
+        const parts = subMatches.map((sub) => {
+          if (sub.startsWith('(')) return decodePdfLiteral(sub.slice(1, -1))
+          return decodePdfHex(sub.slice(1, -1))
+        })
+        const joined = parts.join('').trim()
+        if (joined) currentLine.push(joined)
+      } else if (token.startsWith('(')) {
+        const closeIdx = token.lastIndexOf(')')
+        const lit = decodePdfLiteral(token.slice(1, closeIdx)).trim()
+        if (lit) currentLine.push(lit)
+      }
+    }
+    flushLine()
+    return lines
+  }
+
+  const allLines = []
+  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g
+  let streamMatch
+
+  while ((streamMatch = streamRegex.exec(rawPdfStr)) !== null) {
+    const startOffset = streamMatch.index + streamMatch[0].indexOf('\n') + 1
+    const streamBodyStr = streamMatch[1]
+    const endOffset = startOffset + streamBodyStr.length
+    const streamBytes = bytes.slice(startOffset, endOffset)
+
+    let decodedContent = ''
+    if (typeof DecompressionStream !== 'undefined') {
+      for (const format of ['deflate', 'deflate-raw']) {
+        try {
+          const ds = new DecompressionStream(format)
+          const writer = ds.writable.getWriter()
+          writer.write(streamBytes)
+          writer.close()
+          const decompressedBuf = await new Response(ds.readable).arrayBuffer()
+          decodedContent = latin1Decoder.decode(new Uint8Array(decompressedBuf))
+          if (decodedContent.includes('Tj') || decodedContent.includes('TJ')) break
+        } catch {
+          // probar siguiente formato
+        }
+      }
+    }
+
+    if (!decodedContent) {
+      decodedContent = streamBodyStr
+    }
+
+    if (decodedContent.includes('Tj') || decodedContent.includes('TJ')) {
+      const extracted = parseContentStreamText(decodedContent)
+      allLines.push(...extracted)
+    }
+  }
+
+  return allLines.join('\n')
+}
+
+/**
+ * Extrae el texto y las imágenes de productos desde un archivo .PDF para la Subida Masiva
+ */
+export async function extractCatalogFromPdfFile(file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const embeddedImages = await extractEmbeddedJpegsFromPdfBuffer(arrayBuffer)
+  let extractedText = ''
+
+  try {
+    const pdfjsLib = await loadPdfJs()
+    const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise
+    const pageLines = []
+
+    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+      const page = await pdfDoc.getPage(pageNum)
+      const textContent = await page.getTextContent()
+
+      // Agrupar fragmentos por coordenada vertical Y (con tolerancia de 4pt)
+      const rows = []
+      for (const item of textContent.items) {
+        const str = (item.str || '').trim()
+        if (!str) continue
+        const x = item.transform ? item.transform[4] : 0
+        const y = item.transform ? item.transform[5] : 0
+
+        let row = rows.find((r) => Math.abs(r.y - y) <= 4.5)
+        if (!row) {
+          row = { y, items: [] }
+          rows.push(row)
+        }
+        row.items.push({ x, str })
+      }
+
+      // Ordenar de arriba hacia abajo y de izquierda a derecha
+      rows.sort((a, b) => b.y - a.y)
+      for (const row of rows) {
+        row.items.sort((a, b) => a.x - b.x)
+        const lineStr = row.items.map((it) => it.str).join(' ').replace(/\s{2,}/g, ' ').trim()
+        if (lineStr) pageLines.push(lineStr)
+      }
+    }
+
+    extractedText = pageLines.join('\n')
+  } catch {
+    // Usar el descompresor PDF nativo si no hay red o falla el worker externo
+    extractedText = await extractTextFromPdfBufferNative(arrayBuffer)
+  }
+
+  // Filtrar líneas decorativas o numeración de página suelta
+  const cleanedLines = extractedText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => {
+      if (!l || l.length < 3) return false
+      if (/^p[áa]gina\s+\d+/i.test(l)) return false
+      if (/^\d+$/.test(l)) return false
+      return true
+    })
+
+  const finalCleanedText = cleanedLines.join('\n')
+  let items = parseBulkCatalogText(finalCleanedText)
+
+  // Si el PDF contenía fotos incrustadas, asociarlas a los productos detectados
+  if (embeddedImages.length > 0 && items.length > 0) {
+    items = items.map((item, idx) => {
+      const imgData = embeddedImages[idx]
+      if (!imgData) return item
+      return {
+        ...item,
+        image: item.image || imgData.dataUrl,
+        images: item.images?.length ? item.images : [imgData.dataUrl],
+        shades:
+          imgData.dominantColors?.length >= 2
+            ? imgData.dominantColors
+            : item.shades,
+      }
+    })
+  } else if (items.length === 0 && embeddedImages.length > 0) {
+    // Si era un PDF compuesto únicamente por imágenes escaneadas sin texto seleccionable
+    const baseMeta = parseFilenameMetadata(file.name)
+    items = embeddedImages.map((imgData, idx) => {
+      const itemName =
+        embeddedImages.length === 1 ? baseMeta.name : `${baseMeta.name} #${idx + 1}`
+      const rule = autoClassifyProduct(itemName, '')
+      const copy = autoGenerateCopy(itemName, rule.category)
+      return {
+        id: `pdf-img-${Date.now()}-${idx}`,
+        name: itemName,
+        category: rule.category,
+        price: baseMeta.price,
+        stock: 25,
+        tagline: copy.tagline,
+        description: copy.description,
+        shades:
+          imgData.dominantColors?.length >= 2
+            ? imgData.dominantColors
+            : rule.defaultShades,
+        defaultShade: 0,
+        badge: 'Nuevo',
+        icon: rule.icon,
+        gradient: rule.gradient,
+        image: imgData.dataUrl,
+        images: [imgData.dataUrl],
+        includeInPack: true,
+      }
+    })
+  }
+
+  return {
+    text: finalCleanedText,
+    items,
+    embeddedImagesCount: embeddedImages.length,
+  }
+}
+
+
