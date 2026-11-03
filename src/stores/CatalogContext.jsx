@@ -199,12 +199,38 @@ export function CatalogProvider({ children }) {
     }
   })
 
+  const [packTypes, setPackTypes] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PACK_TYPES_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_PACK_TYPES
+  })
+
+  const [customCategories, setCustomCategories] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_CATEGORIES_LIST
+  })
+
   // Ref para tener siempre el último snapshot de ajustes al sincronizar con Supabase
   const settingsRef = useRef({
-    featuredSlots: DEFAULT_FEATURED_SLOTS,
-    packTypes: DEFAULT_PACK_TYPES,
-    customCategories: DEFAULT_CATEGORIES_LIST,
-    adminPinHash: DEFAULT_ADMIN_PIN_SHA256,
+    featuredSlots,
+    packTypes,
+    customCategories,
+    adminPinHash,
   })
 
   useEffect(() => {
@@ -244,19 +270,6 @@ export function CatalogProvider({ children }) {
     },
     [syncSettingsToCloud]
   )
-
-  const [packTypes, setPackTypes] = useState(() => {
-    try {
-      const saved = localStorage.getItem(PACK_TYPES_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_PACK_TYPES
-  })
 
   const savePackTypes = useCallback(
     (nextPacks) => {
@@ -301,19 +314,6 @@ export function CatalogProvider({ children }) {
     },
     [packTypes, savePackTypes]
   )
-
-  const [customCategories, setCustomCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // ignore
-    }
-    return DEFAULT_CATEGORIES_LIST
-  })
 
   const saveCategoriesList = useCallback(
     (nextCats) => {
