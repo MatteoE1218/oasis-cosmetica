@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger)
 
 export default function CustomBoxSection() {
   const sectionRef = useRef(null)
-  const { products, packTypes } = useCatalog()
+  const { products, packTypes, navigateToPage } = useCatalog()
 
   const activePackTypes =
     Array.isArray(packTypes) && packTypes.length > 0 ? packTypes : DEFAULT_PACK_TYPES
@@ -49,34 +49,24 @@ export default function CustomBoxSection() {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.custom-box__title',
-        { y: 40, opacity: 0 },
+        { y: 30, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.9,
+          duration: 0.7,
           ease: 'power3.out',
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: 'top 75%',
-            toggleActions: 'play none none reverse',
-          },
         }
       )
 
       gsap.fromTo(
         '.custom-box__grid > *',
-        { y: 50, opacity: 0 },
+        { y: 35, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          stagger: 0.15,
-          duration: 0.8,
+          stagger: 0.12,
+          duration: 0.7,
           ease: 'power3.out',
-          scrollTrigger: {
-            trigger: '.custom-box__grid',
-            start: 'top 80%',
-            toggleActions: 'play none none reverse',
-          },
         }
       )
     }, sectionRef.current)
@@ -152,8 +142,26 @@ export default function CustomBoxSection() {
   }
 
   return (
-    <section ref={sectionRef} className="custom-box section" id="packs">
+    <section ref={sectionRef} className="custom-box custom-box--page section" id="packs">
       <div className="container">
+        {/* Barra superior de navegación rápida */}
+        <div className="page-top-bar">
+          <button
+            type="button"
+            className="page-top-bar__back"
+            onClick={() => navigateToPage('home')}
+          >
+            ← Volver a Inicio
+          </button>
+          <button
+            type="button"
+            className="page-top-bar__pack-cta"
+            onClick={() => navigateToPage('catalog')}
+          >
+            🛍️ Ver Catálogo Completo →
+          </button>
+        </div>
+
         {/* Encabezado editorial */}
         <div className="section-header text-center">
           <div className="custom-box__tag">

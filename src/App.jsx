@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { CartProvider } from './stores/CartContext'
-import { CatalogProvider } from './stores/CatalogContext'
+import { CatalogProvider, useCatalog } from './stores/CatalogContext'
 import AtmosphereBackground from './components/ui/AtmosphereBackground'
 import Navbar from './components/ui/Navbar'
 import HeroSection from './components/ui/HeroSection'
 import LipstickSection from './components/ui/LipstickSection'
 import FluidSection from './components/ui/FluidSection'
 import CompactSection from './components/ui/CompactSection'
-import TextureShowcase from './components/ui/TextureShowcase'
 import ProductCatalog from './components/ui/ProductCatalog'
 import CustomBoxSection from './components/ui/CustomBoxSection'
 import ScrollSection from './components/ui/ScrollSection'
@@ -18,18 +18,46 @@ import WhatsAppButton from './components/ui/WhatsAppButton'
 import AdminPanel from './components/ui/AdminPanel'
 import './App.css'
 
-/**
- * App Root — Haute Cosmétique 3D (Luminous Editorial Edition)
- *
- * Scrollytelling Architecture:
- * - AtmosphereBackground: fixed dynamic gradient backdrop morphing between ivory (#FDFBF7),
- *   dusty powder rose (#F8EAE8), warm cashmere beige (#F5EFEB), and soft porcelain (#F9F6F0).
- * - Scene3D: fixed R3F canvas with Three.js studio lighting and 3 cosmetic items
- *   (Rouge Éternel lipstick, Sérum Éclat glass bottle, Poudre Éclat lacquer compact).
- * - Multi-section layout with synchronized GSAP ScrollTrigger animations.
- */
+function MainContent() {
+  const { activePage } = useCatalog()
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        ScrollTrigger.refresh()
+      } catch {
+        // ignore
+      }
+    }, 80)
+    return () => clearTimeout(timer)
+  }, [activePage])
+
+  return (
+    <main id="main-content">
+      {activePage === 'home' && (
+        <>
+          {/* Sección 1: Hero — Presentación principal */}
+          <HeroSection />
+
+          {/* Productos Destacados (1, 2 y 3 configurables desde el Panel de Admin) */}
+          <LipstickSection />
+          <FluidSection />
+          <CompactSection />
+
+          {/* Sobre Nosotros, calidad y accesos directos */}
+          <ScrollSection />
+        </>
+      )}
+
+      {activePage === 'packs' && <CustomBoxSection />}
+
+      {activePage === 'catalog' && <ProductCatalog />}
+    </main>
+  )
+}
+
 export default function App() {
-  const [loaded, setLoaded] = useState(false)
+  const [, setLoaded] = useState(false)
 
   return (
     <CatalogProvider>
@@ -45,31 +73,7 @@ export default function App() {
           <div className="overlay-content">
             <Navbar />
 
-            <main id="main-content">
-              {/* Sección 1: Hero — Presentación principal con iluminación cálida */}
-              <HeroSection />
-
-              {/* Sección 2: Pintalabios — Labial 3D rotando y abriéndose con el scroll (#F8EAE8) */}
-              <LipstickSection />
-
-              {/* Sección 3: Base Líquida / Sérum — Frasco de vidrio y textura fluida (#F5EFEB) */}
-              <FluidSection />
-
-              {/* Sección 4: Polvos Compactos — Estuche de laca blanca con espejo (#F9F6F0) */}
-              <CompactSection />
-
-              {/* Galería interactiva de texturas & morphing swatches */}
-              <TextureShowcase />
-
-              {/* Catálogo completo con tarjetas de productos */}
-              <ProductCatalog />
-
-              {/* Nueva sección: Arma tu Pack o Caja de Regalo Personalizada */}
-              <CustomBoxSection />
-
-              {/* Calidad, garantía y atención */}
-              <ScrollSection />
-            </main>
+            <MainContent />
 
             {/* Footer editorial */}
             <Footer />
@@ -80,7 +84,7 @@ export default function App() {
             {/* Botón flotante de WhatsApp para atención y pedidos */}
             <WhatsAppButton />
 
-            {/* Panel de Administrador Oculto (#admin / 5 clics en logo del footer / Ctrl+Shift+A) */}
+            {/* Panel de Administrador Oculto (5 clics en logo del footer) */}
             <AdminPanel />
           </div>
         </div>

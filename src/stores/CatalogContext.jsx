@@ -352,8 +352,24 @@ export function CatalogProvider({ children }) {
 
   const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
+  const [activePage, setActivePage] = useState('home') // 'home' | 'packs' | 'catalog'
   const [syncStatus, setSyncStatus] = useState('local') // 'local' | 'syncing' | 'cloud' | 'error'
   const [syncMessage, setSyncMessage] = useState('')
+
+  const navigateToPage = useCallback((page, sectionId = null) => {
+    const validPage = ['home', 'packs', 'catalog'].includes(page) ? page : 'home'
+    setActivePage(validPage)
+    setTimeout(() => {
+      if (sectionId) {
+        const el = document.getElementById(sectionId)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+          return
+        }
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 30)
+  }, [])
 
   // Persistir en localStorage como respaldo instantáneo
   const saveLocally = useCallback((nextProducts) => {
@@ -657,6 +673,9 @@ export function CatalogProvider({ children }) {
       closeAdminPanel,
       isAdminAuthenticated,
       setIsAdminAuthenticated,
+      activePage,
+      setActivePage,
+      navigateToPage,
       verifyAdminPin,
       updateAdminPin,
       failedAttempts,
@@ -683,6 +702,8 @@ export function CatalogProvider({ children }) {
       isAdminOpen,
       closeAdminPanel,
       isAdminAuthenticated,
+      activePage,
+      navigateToPage,
       verifyAdminPin,
       updateAdminPin,
       failedAttempts,

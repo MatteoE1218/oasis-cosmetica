@@ -1,38 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCart, useCartDispatch } from '../../stores/CartContext'
+import { useCatalog } from '../../stores/CatalogContext'
 import './Navbar.css'
 
 const navLinks = [
-  { href: '#hero', id: 'hero', label: 'Inicio' },
-  { href: '#lipstick', id: 'lipstick', label: 'Labiales' },
-  { href: '#base-fluida', id: 'base-fluida', label: 'Base Líquida' },
-  { href: '#compacto', id: 'compacto', label: 'Polvos' },
-  { href: '#packs', id: 'packs', label: 'Arma tu Pack' },
-  { href: '#catalogo', id: 'catalogo', label: 'Catálogo' },
+  { page: 'home', id: 'inicio', label: 'Inicio' },
+  { page: 'packs', id: 'packs', label: 'Arma tu Pack' },
+  { page: 'catalog', id: 'catalogo', label: 'Catálogo' },
 ]
 
 export default function Navbar() {
   const navRef = useRef(null)
   const [scrolled, setScrolled] = useState(false)
-  const [activeSection, setActiveSection] = useState('hero')
   const cart = useCart()
   const dispatch = useCartDispatch()
+  const { activePage, navigateToPage } = useCatalog()
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 40)
-
-      // Active section calculation
-      const sections = ['hero', 'lipstick', 'base-fluida', 'compacto', 'packs', 'catalogo']
-      const scrollPos = window.scrollY + 200
-
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sections[i])
-        if (el && el.offsetTop <= scrollPos) {
-          setActiveSection(sections[i])
-          break
-        }
-      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -40,16 +26,27 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const handleNavClick = (e, page) => {
+    e.preventDefault()
+    navigateToPage(page)
+  }
+
   return (
     <nav
       ref={navRef}
       id="main-nav"
-      className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
+      className={`navbar ${scrolled || activePage !== 'home' ? 'navbar--scrolled' : ''}`}
       aria-label="Navegación principal"
     >
       <div className="container navbar__inner">
         {/* Logo con icono insignia */}
-        <a href="#hero" className="navbar__logo" id="logo-link" aria-label="Oasis Makeup - Inicio">
+        <a
+          href="#inicio"
+          onClick={(e) => handleNavClick(e, 'home')}
+          className="navbar__logo"
+          id="logo-link"
+          aria-label="Oasis Makeup - Inicio"
+        >
           <img src="/oasis-logo.png" alt="Oasis Makeup Logo" className="navbar__logo-icon" width="38" height="38" />
           <span className="navbar__logo-text">
             <span className="navbar__logo-oasis">OASIS</span>
@@ -57,17 +54,18 @@ export default function Navbar() {
           </span>
         </a>
 
-        {/* Navigation links */}
+        {/* Navigation links: Inicio, Arma tu Pack, Catálogo */}
         <ul className="navbar__links" id="nav-links">
           {navLinks.map((link) => (
             <li key={link.id}>
               <a
-                href={link.href}
-                className={`navbar__link ${activeSection === link.id ? 'navbar__link--active' : ''}`}
+                href={`#${link.id}`}
+                onClick={(e) => handleNavClick(e, link.page)}
+                className={`navbar__link ${activePage === link.page ? 'navbar__link--active' : ''}`}
                 id={`nav-${link.id}`}
               >
                 {link.label}
-                {activeSection === link.id && (
+                {activePage === link.page && (
                   <span className="navbar__link-indicator" aria-hidden="true" />
                 )}
               </a>

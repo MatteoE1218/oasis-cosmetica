@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useCatalog } from '../../stores/CatalogContext'
 import './ScrollSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -39,12 +40,13 @@ const features = [
 export default function ScrollSection() {
   const sectionRef = useRef(null)
   const cardsRef = useRef([])
+  const { navigateToPage } = useCatalog()
 
   useEffect(() => {
     if (!sectionRef.current) return
     const ctx = gsap.context(() => {
       // Animate each card on scroll
-      cardsRef.current.forEach((card, i) => {
+      cardsRef.current.forEach((card) => {
         if (!card) return
         gsap.fromTo(
           card,
@@ -74,15 +76,16 @@ export default function ScrollSection() {
   }, [])
 
   return (
-    <section ref={sectionRef} className="scroll-section section" id="coleccion">
+    <section ref={sectionRef} className="scroll-section section" id="sobre-nosotros">
       <div className="container">
         <div className="section-header">
+          <p className="scroll-section__label">Sobre Nosotros • Oasis Makeup</p>
           <h2 className="section-title">
             Creado para <span className="text-gradient">sorprender y cuidar</span>
           </h2>
           <p className="section-subtitle">
-            Un emprendimiento de maquillaje donde cada producto y detalle de empaque se prepara 
-            con dedicación, listo para consentirte o hacer el regalo ideal.
+            Somos una tienda especializada en maquillaje en tendencia y detalles personalizados.
+            Cada producto y cada caja de regalo se prepara con dedicación, lista para consentirte o sorprender a alguien especial.
           </p>
         </div>
 
@@ -100,6 +103,23 @@ export default function ScrollSection() {
               <div className="feature-card__shine" aria-hidden="true" />
             </article>
           ))}
+        </div>
+
+        <div className="scroll-section__cta">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => navigateToPage('catalog')}
+          >
+            <span>Explorar Catálogo Completo</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => navigateToPage('packs')}
+          >
+            🎁 Configurar mi Pack de Regalo
+          </button>
         </div>
       </div>
     </section>

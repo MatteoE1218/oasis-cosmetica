@@ -3,6 +3,24 @@
   position: relative;
 }
 
+.scroll-section__label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-accent-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.scroll-section__cta {
+  margin-top: var(--space-3xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
 .scroll-section__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

@@ -22,7 +22,7 @@ export default function CompactSection() {
   const [selectedShade, setSelectedShade] = useState(0)
   const [addedAnimation, setAddedAnimation] = useState(false)
   const dispatch = useCartDispatch()
-  const { products, featuredSlots } = useCatalog()
+  const { products, featuredSlots, navigateToPage } = useCatalog()
 
   const featuredProduct =
     products.find((p) => String(p.id) === String(featuredSlots?.slot3Id)) ||
@@ -208,7 +208,14 @@ export default function CompactSection() {
               <span>{addedAnimation ? '✓ ¡Añadido!' : 'Añadir al Carrito'}</span>
               <span className="compact-btn-price">• ${displayPrice.toFixed(2)}</span>
             </button>
-            <a href="#catalogo" className="btn btn-outline">
+            <a
+              href="#catalogo"
+              onClick={(e) => {
+                e.preventDefault()
+                navigateToPage('catalog')
+              }}
+              className="btn btn-outline"
+            >
               Ver Todo el Catálogo
             </a>
           </div>

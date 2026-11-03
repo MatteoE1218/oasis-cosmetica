@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import scrollState from '../../stores/scrollStore'
+import { useCatalog } from '../../stores/CatalogContext'
 import './HeroSection.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -19,6 +20,7 @@ export default function HeroSection() {
   const actionsRef = useRef(null)
   const highlightsRef = useRef(null)
   const scrollIndicatorRef = useRef(null)
+  const { navigateToPage } = useCatalog()
 
   useEffect(() => {
     if (!heroRef.current) return
@@ -130,15 +132,31 @@ export default function HeroSection() {
 
         {/* Actions */}
         <div ref={actionsRef} className="hero__actions">
-          <a href="#lipstick" className="btn btn-primary" id="hero-cta-explore">
-            <span>Explorar Colección</span>
+          <a
+            href="#catalogo"
+            onClick={(e) => {
+              e.preventDefault()
+              navigateToPage('catalog')
+            }}
+            className="btn btn-primary"
+            id="hero-cta-explore"
+          >
+            <span>Explorar Catálogo</span>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          <a href="#packs" className="btn btn-outline" id="hero-cta-packs">
-            🎁 Armar Pack de Regalo
+          <a
+            href="#packs"
+            onClick={(e) => {
+              e.preventDefault()
+              navigateToPage('packs')
+            }}
+            className="btn btn-outline"
+            id="hero-cta-packs"
+          >
+            🎁 Arma tu Pack
           </a>
         </div>
 

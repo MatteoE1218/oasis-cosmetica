@@ -16,7 +16,7 @@ export default function Footer() {
   const footerRef = useRef(null)
   const secretClickCountRef = useRef(0)
   const secretClickTimerRef = useRef(null)
-  const { setIsAdminOpen } = useCatalog()
+  const { setIsAdminOpen, navigateToPage } = useCatalog()
 
   const handleSecretAdminClick = () => {
     secretClickCountRef.current += 1
@@ -134,20 +134,94 @@ export default function Footer() {
         <div className="footer__links-group">
           <h3 className="footer__heading">Tienda</h3>
           <ul className="footer__links">
-            <li><a href="#catalogo" className="footer__link">Catálogo</a></li>
-            <li><a href="#packs" className="footer__link">Packs de Regalo</a></li>
-            <li><a href="#lipstick" className="footer__link">Labiales</a></li>
-            <li><a href="#base-fluida" className="footer__link">Base & Sérum</a></li>
+            <li>
+              <a
+                href="#inicio"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('home')
+                }}
+                className="footer__link"
+              >
+                Inicio & Destacados
+              </a>
+            </li>
+            <li>
+              <a
+                href="#packs"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('packs')
+                }}
+                className="footer__link"
+              >
+                Arma tu Pack
+              </a>
+            </li>
+            <li>
+              <a
+                href="#catalogo"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('catalog')
+                }}
+                className="footer__link"
+              >
+                Catálogo Completo
+              </a>
+            </li>
           </ul>
         </div>
 
         <div className="footer__links-group">
           <h3 className="footer__heading">Información</h3>
           <ul className="footer__links">
-            <li><a href="#" className="footer__link">Sobre Nosotros</a></li>
-            <li><a href="#catalogo" className="footer__link">Guía de Tonos</a></li>
-            <li><a href="#packs" className="footer__link">Detalles de Packs</a></li>
-            <li><a href="https://wa.me/593998346794" target="_blank" rel="noopener noreferrer" className="footer__link">Atención por WhatsApp</a></li>
+            <li>
+              <a
+                href="#sobre-nosotros"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('home', 'sobre-nosotros')
+                }}
+                className="footer__link"
+              >
+                Sobre Nosotros
+              </a>
+            </li>
+            <li>
+              <a
+                href="#catalogo"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('catalog')
+                }}
+                className="footer__link"
+              >
+                Guía de Tonos
+              </a>
+            </li>
+            <li>
+              <a
+                href="#packs"
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigateToPage('packs')
+                }}
+                className="footer__link"
+              >
+                Detalles de Packs
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://wa.me/593998346794"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer__link"
+              >
+                Atención por WhatsApp
+              </a>
+            </li>
           </ul>
         </div>
 
