@@ -1127,9 +1127,20 @@ export default function AdminPanel() {
 
                     <textarea
                       rows="5"
+                      className="admin-auto-textarea admin-bulk-paste-textarea"
                       placeholder={`Pega aquí tus productos (uno por línea o copiado de Excel). Ejemplo:\nLabial Mate Velvet - Rojo sedoso larga duración - $18.50\nBase Sérum Luminosa, Cobertura cristal con ácido hialurónico, $32.00, 20, Porcelana, Arena\nPaleta de 12 Sombras Sunset - Tonos cálidos y dorados - $45.00`}
                       value={bulkText}
-                      onChange={(e) => setBulkText(e.target.value)}
+                      ref={(el) => {
+                        if (el) {
+                          el.style.height = 'auto';
+                          el.style.height = `${Math.max(120, el.scrollHeight)}px`;
+                        }
+                      }}
+                      onChange={(e) => {
+                        setBulkText(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${Math.max(120, e.target.scrollHeight)}px`;
+                      }}
                     />
 
                     <button
@@ -1211,16 +1222,25 @@ export default function AdminPanel() {
                                   )}
                                 </label>
                               </td>
-                              <td>
-                                <input
-                                  type="text"
+                              <td className="admin-bulk-col-name">
+                                <textarea
+                                  rows={2}
+                                  className="admin-auto-textarea"
                                   value={item.name}
-                                  onChange={(e) =>
-                                    handleUpdateBulkItem(idx, 'name', e.target.value)
-                                  }
+                                  ref={(el) => {
+                                    if (el) {
+                                      el.style.height = 'auto';
+                                      el.style.height = `${el.scrollHeight}px`;
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    handleUpdateBulkItem(idx, 'name', e.target.value);
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${e.target.scrollHeight}px`;
+                                  }}
                                 />
                               </td>
-                              <td>
+                              <td className="admin-bulk-col-category">
                                 <select
                                   value={item.category}
                                   onChange={(e) =>
@@ -1236,13 +1256,22 @@ export default function AdminPanel() {
                                     ))}
                                 </select>
                               </td>
-                              <td>
-                                <input
-                                  type="text"
+                              <td className="admin-bulk-col-desc">
+                                <textarea
+                                  rows={2}
+                                  className="admin-auto-textarea"
                                   value={item.description}
-                                  onChange={(e) =>
-                                    handleUpdateBulkItem(idx, 'description', e.target.value)
-                                  }
+                                  ref={(el) => {
+                                    if (el) {
+                                      el.style.height = 'auto';
+                                      el.style.height = `${el.scrollHeight}px`;
+                                    }
+                                  }}
+                                  onChange={(e) => {
+                                    handleUpdateBulkItem(idx, 'description', e.target.value);
+                                    e.target.style.height = 'auto';
+                                    e.target.style.height = `${e.target.scrollHeight}px`;
+                                  }}
                                 />
                               </td>
                               <td>

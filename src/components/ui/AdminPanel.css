@@ -817,8 +817,16 @@
   padding: 0.75rem;
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.16);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow-y: hidden;
+  resize: vertical;
+  field-sizing: content;
+  min-height: 120px;
 }
 
 .admin-bulk-preview {
@@ -861,23 +869,64 @@
 .admin-bulk-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
 }
 
 .admin-bulk-table th,
 .admin-bulk-table td {
-  padding: 0.55rem;
+  padding: 0.65rem 0.55rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   text-align: left;
+  vertical-align: top;
+}
+
+.admin-bulk-col-name {
+  min-width: 210px;
+  width: 24%;
+}
+
+.admin-bulk-col-category {
+  min-width: 150px;
+  width: 14%;
+}
+
+.admin-bulk-col-desc {
+  min-width: 340px;
+  width: 42%;
 }
 
 .admin-bulk-table input,
-.admin-bulk-table select {
+.admin-bulk-table select,
+.admin-bulk-table textarea {
   width: 100%;
-  padding: 0.4rem 0.55rem;
+  padding: 0.5rem 0.65rem;
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.15);
-  font-size: 0.8rem;
+  font-size: 0.84rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-bulk-table textarea.admin-auto-textarea {
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow-y: hidden;
+  resize: vertical;
+  field-sizing: content;
+  min-height: 44px;
+  background: #fffdfd;
+}
+
+.admin-bulk-table input:focus,
+.admin-bulk-table select:focus,
+.admin-bulk-table textarea:focus {
+  outline: none;
+  border-color: #f72585;
+  box-shadow: 0 0 0 3px rgba(247, 37, 133, 0.12);
+  background: #ffffff;
 }
 
 .admin-input-narrow {
